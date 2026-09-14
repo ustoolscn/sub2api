@@ -953,6 +953,10 @@ func TestAPIContracts(t *testing.T) {
 					"openai_codex_client_version":       "",
 					"openai_codex_client_version_synced": "",
 					"openai_codex_version_auto_sync_enabled": true,
+					"openai_codex_fingerprint_enabled":        true,
+					"openai_codex_originator":                 "codex-tui",
+					"openai_codex_timezone":                   "",
+					"openai_codex_account_persona_enabled":    false,
 					"openai_fast_policy_settings": {
 						"rules": []
 					},
@@ -1270,6 +1274,10 @@ func TestAPIContracts(t *testing.T) {
 					"openai_codex_client_version":       "",
 					"openai_codex_client_version_synced": "",
 					"openai_codex_version_auto_sync_enabled": true,
+					"openai_codex_fingerprint_enabled":        true,
+					"openai_codex_originator":                 "codex-tui",
+					"openai_codex_timezone":                   "",
+					"openai_codex_account_persona_enabled":    false,
 					"openai_fast_policy_settings": {
 						"rules": []
 					},
