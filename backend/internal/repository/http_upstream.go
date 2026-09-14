@@ -27,6 +27,7 @@ import (
 	"golang.org/x/net/http2"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/codexfp"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/proxyurl"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/proxyutil"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/servertiming"
@@ -100,6 +101,7 @@ const (
 	upstreamProtocolModeOpenAIH1         = "openai_h1"
 	upstreamProtocolModeOpenAIH2         = "openai_h2"
 	upstreamProtocolModeOpenAIH1Fallback = "openai_h1_fallback"
+	upstreamProtocolModeOpenAICodexFP    = "openai_codexfp"
 	upstreamProtocolModeGrok             = "grok"
 )
 
@@ -203,12 +205,16 @@ func (s *httpUpstreamService) Do(req *http.Request, proxyURL string, accountID i
 		return nil, err
 	}
 	profile := service.HTTPUpstreamProfileDefault
+	codexFP := false
 	if req != nil {
 		profile = service.HTTPUpstreamProfileFromContext(req.Context())
+		// Codex network fingerprint applies only to real ChatGPT/OpenAI Codex
+		// endpoints; the gateway marks those requests explicitly.
+		codexFP = profile == service.HTTPUpstreamProfileOpenAI && service.HTTPUpstreamCodexFingerprint(req.Context())
 	}
 
 	// 获取或创建对应的客户端，并标记请求占用
-	entry, err := s.acquireClientWithProfile(proxyURL, accountID, accountConcurrency, profile)
+	entry, err := s.acquireClientWithProfile(proxyURL, accountID, accountConcurrency, profile, codexFP)
 	if err != nil {
 		return nil, err
 	}
@@ -630,12 +636,12 @@ func (s *httpUpstreamService) redirectChecker(req *http.Request, via []*http.Req
 // acquireClient 获取或创建客户端，并标记为进行中请求
 // 用于请求路径，避免在获取后被淘汰
 func (s *httpUpstreamService) acquireClient(proxyURL string, accountID int64, accountConcurrency int) (*upstreamClientEntry, error) {
-	return s.acquireClientWithProfile(proxyURL, accountID, accountConcurrency, service.HTTPUpstreamProfileDefault)
+	return s.acquireClientWithProfile(proxyURL, accountID, accountConcurrency, service.HTTPUpstreamProfileDefault, false)
 }
 
 // acquireClientWithProfile 获取或创建客户端，并按请求 profile 选择协议策略。
-func (s *httpUpstreamService) acquireClientWithProfile(proxyURL string, accountID int64, accountConcurrency int, profile service.HTTPUpstreamProfile) (*upstreamClientEntry, error) {
-	return s.getClientEntry(proxyURL, accountID, accountConcurrency, profile, true, true)
+func (s *httpUpstreamService) acquireClientWithProfile(proxyURL string, accountID int64, accountConcurrency int, profile service.HTTPUpstreamProfile, codexFP bool) (*upstreamClientEntry, error) {
+	return s.getClientEntry(proxyURL, accountID, accountConcurrency, profile, codexFP, true, true)
 }
 
 // getOrCreateClient 获取或创建客户端
@@ -654,13 +660,13 @@ func (s *httpUpstreamService) acquireClientWithProfile(proxyURL string, accountI
 //   - account: 按账户隔离，同一账户共享客户端（代理变更时重建）
 //   - account_proxy: 按账户+代理组合隔离，最细粒度
 func (s *httpUpstreamService) getOrCreateClient(proxyURL string, accountID int64, accountConcurrency int) (*upstreamClientEntry, error) {
-	return s.getClientEntry(proxyURL, accountID, accountConcurrency, service.HTTPUpstreamProfileDefault, false, false)
+	return s.getClientEntry(proxyURL, accountID, accountConcurrency, service.HTTPUpstreamProfileDefault, false, false, false)
 }
 
 // getClientEntry 获取或创建客户端条目
 // markInFlight=true 时会标记进行中请求，用于请求路径防止被淘汰
 // enforceLimit=true 时会限制客户端数量，超限且无法淘汰时返回错误
-func (s *httpUpstreamService) getClientEntry(proxyURL string, accountID int64, accountConcurrency int, profile service.HTTPUpstreamProfile, markInFlight bool, enforceLimit bool) (*upstreamClientEntry, error) {
+func (s *httpUpstreamService) getClientEntry(proxyURL string, accountID int64, accountConcurrency int, profile service.HTTPUpstreamProfile, codexFP bool, markInFlight bool, enforceLimit bool) (*upstreamClientEntry, error) {
 	// 获取隔离模式
 	isolation := s.getIsolationMode()
 	// 标准化代理 URL 并解析
@@ -670,6 +676,10 @@ func (s *httpUpstreamService) getClientEntry(proxyURL string, accountID int64, a
 	}
 	// 根据请求 profile（例如 OpenAI）选择协议模式
 	protocolMode := s.resolveProtocolMode(profile, proxyKey, parsedProxy)
+	// Codex 网络指纹伪装：使用 rustls/hyper 形态的专用传输，与普通池隔离缓存。
+	if codexFP {
+		protocolMode = upstreamProtocolModeOpenAICodexFP
+	}
 	settings := s.resolvePoolSettings(isolation, accountConcurrency)
 	settings = s.applyProfilePoolSettings(settings, profile)
 	// 构建缓存键（根据隔离策略不同）
@@ -718,12 +728,17 @@ func (s *httpUpstreamService) getClientEntry(proxyURL string, accountID int64, a
 	}
 
 	// 缓存未命中或需要重建，创建新客户端
-	transport, err := buildUpstreamTransport(settings, parsedProxy, protocolMode)
+	var roundTripper http.RoundTripper
+	if protocolMode == upstreamProtocolModeOpenAICodexFP {
+		roundTripper, err = buildCodexFingerprintTransport(settings, proxyURL)
+	} else {
+		roundTripper, err = buildUpstreamTransport(settings, parsedProxy, protocolMode)
+	}
 	if err != nil {
 		s.mu.Unlock()
 		return nil, fmt.Errorf("build transport: %w", err)
 	}
-	client := &http.Client{Transport: transport}
+	client := &http.Client{Transport: roundTripper}
 	if s.shouldValidateResolvedIP() {
 		client.CheckRedirect = s.redirectChecker
 	}
@@ -1371,6 +1386,24 @@ func enableHTTP2KeepAlive(transport *http.Transport) (*http2.Transport, error) {
 		h2.PingTimeout = longStreamHTTP2PingTimeout
 	}
 	return h2, nil
+}
+
+// buildCodexFingerprintTransport 构建模拟官方 Codex CLI（rustls + hyper）网络指纹的
+// Transport：utls 形态的 TLS ClientHello + hyper 形态的 HTTP/2 preface（SETTINGS 顺序、
+// 连接级 WINDOW_UPDATE、伪头顺序），并关闭自动 gzip（真实 Codex 不带 accept-encoding）。
+// 仅用于真实 ChatGPT/OpenAI Codex 端点。
+func buildCodexFingerprintTransport(settings poolSettings, proxyURL string) (http.RoundTripper, error) {
+	return codexfp.NewTransport(codexfp.TransportOptions{
+		ProxyURL:              proxyURL,
+		MaxIdleConns:          settings.maxIdleConns,
+		MaxIdleConnsPerHost:   settings.maxIdleConnsPerHost,
+		MaxConnsPerHost:       settings.maxConnsPerHost,
+		IdleConnTimeout:       settings.idleConnTimeout,
+		TLSHandshakeTimeout:   defaultUpstreamTLSHandshakeTimeout,
+		ResponseHeaderTimeout: settings.responseHeaderTimeout,
+		ReadIdleTimeout:       longStreamHTTP2ReadIdleTimeout,
+		PingTimeout:           longStreamHTTP2PingTimeout,
+	})
 }
 
 // buildUpstreamTransportWithTLSFingerprint 构建带 TLS 指纹伪装的 Transport

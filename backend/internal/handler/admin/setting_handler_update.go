@@ -257,6 +257,9 @@ type UpdateSettingsRequest struct {
 	OpenAICodexUserAgent                   *string `json:"openai_codex_user_agent"`
 	OpenAICodexClientVersion               *string `json:"openai_codex_client_version"`
 	OpenAICodexVersionAutoSyncEnabled      *bool   `json:"openai_codex_version_auto_sync_enabled"`
+	OpenAICodexFingerprintEnabled          *bool   `json:"openai_codex_fingerprint_enabled"`
+	OpenAICodexOriginator                  *string `json:"openai_codex_originator"`
+	OpenAICodexTimezone                    *string `json:"openai_codex_timezone"`
 
 	// codex_cli_only 加固（global-only）
 	MinCodexVersion                      string `json:"min_codex_version"`
@@ -1768,6 +1771,24 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.OpenAICodexVersionAutoSyncEnabled
 		}(),
+		OpenAICodexFingerprintEnabled: func() bool {
+			if req.OpenAICodexFingerprintEnabled != nil {
+				return *req.OpenAICodexFingerprintEnabled
+			}
+			return previousSettings.OpenAICodexFingerprintEnabled
+		}(),
+		OpenAICodexOriginator: func() string {
+			if req.OpenAICodexOriginator != nil {
+				return *req.OpenAICodexOriginator
+			}
+			return previousSettings.OpenAICodexOriginator
+		}(),
+		OpenAICodexTimezone: func() string {
+			if req.OpenAICodexTimezone != nil {
+				return *req.OpenAICodexTimezone
+			}
+			return previousSettings.OpenAICodexTimezone
+		}(),
 		MinCodexVersion:       strings.TrimSpace(req.MinCodexVersion),
 		MaxCodexVersion:       strings.TrimSpace(req.MaxCodexVersion),
 		CodexCLIOnlyBlacklist: strings.TrimSpace(req.CodexCLIOnlyBlacklist),
@@ -2310,6 +2331,9 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		OpenAICodexClientVersion:                               updatedSettings.OpenAICodexClientVersion,
 		OpenAICodexClientVersionSynced:                         updatedSettings.OpenAICodexClientVersionSynced,
 		OpenAICodexVersionAutoSyncEnabled:                      updatedSettings.OpenAICodexVersionAutoSyncEnabled,
+		OpenAICodexFingerprintEnabled:                          updatedSettings.OpenAICodexFingerprintEnabled,
+		OpenAICodexOriginator:                                  updatedSettings.OpenAICodexOriginator,
+		OpenAICodexTimezone:                                    updatedSettings.OpenAICodexTimezone,
 		MinCodexVersion:                                        updatedSettings.MinCodexVersion,
 		MaxCodexVersion:                                        updatedSettings.MaxCodexVersion,
 		CodexCLIOnlyBlacklist:                                  updatedSettings.CodexCLIOnlyBlacklist,

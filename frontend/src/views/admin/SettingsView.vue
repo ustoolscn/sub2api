@@ -5777,6 +5777,87 @@
                 <Toggle v-model="form.openai_codex_version_auto_sync_enabled" />
               </div>
 
+              <!-- Codex 网络指纹伪装总开关 -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <label
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{
+                      t(
+                        "admin.settings.gatewayForwarding.openaiCodexFingerprint",
+                      )
+                    }}
+                  </label>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{
+                      t(
+                        "admin.settings.gatewayForwarding.openaiCodexFingerprintHint",
+                      )
+                    }}
+                  </p>
+                </div>
+                <Toggle v-model="form.openai_codex_fingerprint_enabled" />
+              </div>
+
+              <!-- Codex originator -->
+              <div>
+                <label
+                  class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{
+                    t(
+                      "admin.settings.gatewayForwarding.openaiCodexOriginator",
+                    )
+                  }}
+                </label>
+                <select
+                  v-model="form.openai_codex_originator"
+                  class="input w-full font-mono text-sm"
+                >
+                  <option value="codex-tui">codex-tui</option>
+                  <option value="codex_cli_rs">codex_cli_rs</option>
+                  <option value="codex_exec">codex_exec</option>
+                </select>
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{
+                    t(
+                      "admin.settings.gatewayForwarding.openaiCodexOriginatorHint",
+                    )
+                  }}
+                </p>
+              </div>
+
+              <!-- Codex 时区 -->
+              <div>
+                <label
+                  class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{
+                    t(
+                      "admin.settings.gatewayForwarding.openaiCodexTimezone",
+                    )
+                  }}
+                </label>
+                <input
+                  v-model="form.openai_codex_timezone"
+                  type="text"
+                  class="input w-full font-mono text-sm"
+                  :placeholder="
+                    t(
+                      'admin.settings.gatewayForwarding.openaiCodexTimezonePlaceholder',
+                    )
+                  "
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{
+                    t(
+                      "admin.settings.gatewayForwarding.openaiCodexTimezoneHint",
+                    )
+                  }}
+                </p>
+              </div>
+
             </div>
           </div>
 
@@ -9841,6 +9922,9 @@ const form = reactive<SettingsForm>({
   // 只读展示：自动同步任务写入的官方最新稳定版，不参与提交（提交载荷按字段显式构造）
   openai_codex_client_version_synced: "",
   openai_codex_version_auto_sync_enabled: true,
+  openai_codex_fingerprint_enabled: true,
+  openai_codex_originator: "codex-tui",
+  openai_codex_timezone: "",
   // codex_cli_only 加固
   min_codex_version: "",
   max_codex_version: "",
@@ -11447,6 +11531,11 @@ async function saveSettings() {
         form.openai_codex_client_version?.trim() || "",
       openai_codex_version_auto_sync_enabled:
         form.openai_codex_version_auto_sync_enabled,
+      openai_codex_fingerprint_enabled:
+        form.openai_codex_fingerprint_enabled,
+      openai_codex_originator:
+        form.openai_codex_originator?.trim() || "codex-tui",
+      openai_codex_timezone: form.openai_codex_timezone?.trim() || "",
       min_codex_version: form.min_codex_version?.trim() || "",
       max_codex_version: form.max_codex_version?.trim() || "",
       codex_cli_only_allow_app_server_clients:

@@ -608,6 +608,11 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 	// DeepSeek / Kimi 原生 Responses 端点为无状态实现（见 normalizeDeepSeekResponsesRequestBody）。
 	body = normalizeDeepSeekResponsesRequestBody(account, body)
 
+	// 时区对齐：按全局设置改写 environment_context 的 <timezone>/<current_date>。空=不改写。
+	if account.UsesOpenAICodexProtocol() && s.settingService != nil {
+		body = rewriteCodexEnvironmentTimezone(body, s.settingService.GetOpenAICodexTimezone(ctx))
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, targetURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
@@ -727,6 +732,9 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 	applyOpenAICodexBetaFeatures(c, account, req.Header)
 	setOpenAICodexRoutingHintFromBody(req.Header, account, body)
 	logOpenAIRoutingDiagnosticsFromBody(ctx, account, "http_passthrough", req.Header, body, "not_applicable")
+
+	// 终态：对真实 Codex 端点启用官方 Codex CLI 网络指纹并固定请求头顺序（须在所有头改写之后）。
+	req = s.applyCodexFingerprintTransport(req, account)
 
 	return req, nil
 }

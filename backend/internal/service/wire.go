@@ -740,6 +740,9 @@ func ProvideOpsService(
 		// Optional warm-up so the first scheduled request after process start observes
 		// a populated cache rather than zero defaults. Best-effort, sync-bounded.
 		settingService.WarmOpenAIQuotaAutoPauseSettings(context.Background())
+		// Sync the Codex network-fingerprint master switch from DB into the
+		// process-wide flag shared by the HTTP and WebSocket outbound paths.
+		settingService.WarmOpenAICodexFingerprintEnabled(context.Background())
 	}
 	svc.authCacheInvalidationWorker = authCacheInvalidationWorker
 	svc.apiKeyService = apiKeyService

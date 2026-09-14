@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/codexfp"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 	"golang.org/x/sync/singleflight"
 )
@@ -118,6 +119,28 @@ const openAICodexClientVersionDBTimeout = 5 * time.Second
 
 // openAICodexClientVersionSFKey singleflight 键。
 const openAICodexClientVersionSFKey = "openai_codex_client_version"
+
+// cachedOpenAICodexOriginator 缓存出站 Codex originator（进程内缓存，60s TTL）。
+type cachedOpenAICodexOriginator struct {
+	value     string
+	expiresAt int64 // unix nano
+}
+
+const openAICodexOriginatorCacheTTL = 60 * time.Second
+const openAICodexOriginatorErrorTTL = 5 * time.Second
+const openAICodexOriginatorDBTimeout = 5 * time.Second
+const openAICodexOriginatorSFKey = "openai_codex_originator"
+
+// cachedOpenAICodexTimezone 缓存出站 Codex 时区（进程内缓存，60s TTL）。
+type cachedOpenAICodexTimezone struct {
+	value     string
+	expiresAt int64 // unix nano
+}
+
+const openAICodexTimezoneCacheTTL = 60 * time.Second
+const openAICodexTimezoneErrorTTL = 5 * time.Second
+const openAICodexTimezoneDBTimeout = 5 * time.Second
+const openAICodexTimezoneSFKey = "openai_codex_timezone"
 
 type cachedOpenAIQuotaAutoPauseSettings struct {
 	settings  OpsOpenAIAccountQuotaAutoPauseSettings
@@ -310,6 +333,114 @@ func (s *SettingService) GetOpenAICodexUserAgent(ctx context.Context) string {
 	return fallback
 }
 
+// GetOpenAICodexOriginator 返回出站声明的 Codex originator（默认 codex-tui）。
+func (s *SettingService) GetOpenAICodexOriginator(ctx context.Context) string {
+	fallback := openai.CodexDefaultOriginator
+	if s == nil || s.settingRepo == nil {
+		return fallback
+	}
+	if cached, ok := s.openAICodexOriginatorCache.Load().(*cachedOpenAICodexOriginator); ok && cached != nil {
+		if time.Now().UnixNano() < cached.expiresAt {
+			return cached.value
+		}
+	}
+	result, _, _ := s.openAICodexOriginatorSF.Do(openAICodexOriginatorSFKey, func() (any, error) {
+		if cached, ok := s.openAICodexOriginatorCache.Load().(*cachedOpenAICodexOriginator); ok && cached != nil {
+			if time.Now().UnixNano() < cached.expiresAt {
+				return cached.value, nil
+			}
+		}
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		dbCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), openAICodexOriginatorDBTimeout)
+		defer cancel()
+		value, err := s.settingRepo.GetValue(dbCtx, SettingKeyOpenAICodexOriginator)
+		if err != nil && !errors.Is(err, ErrSettingNotFound) {
+			slog.Warn("failed to get openai codex originator setting", "error", err)
+			s.openAICodexOriginatorCache.Store(&cachedOpenAICodexOriginator{
+				value:     fallback,
+				expiresAt: time.Now().Add(openAICodexOriginatorErrorTTL).UnixNano(),
+			})
+			return fallback, nil
+		}
+		originator := NormalizeCodexOriginator(value)
+		s.openAICodexOriginatorCache.Store(&cachedOpenAICodexOriginator{
+			value:     originator,
+			expiresAt: time.Now().Add(openAICodexOriginatorCacheTTL).UnixNano(),
+		})
+		return originator, nil
+	})
+	if originator, ok := result.(string); ok && originator != "" {
+		return originator
+	}
+	return fallback
+}
+
+// GetOpenAICodexTimezone 返回出站请求体 environment_context 使用的时区（IANA 名）。
+// 空值表示不改写、透传客户端上报的时区。
+func (s *SettingService) GetOpenAICodexTimezone(ctx context.Context) string {
+	if s == nil || s.settingRepo == nil {
+		return ""
+	}
+	if cached, ok := s.openAICodexTimezoneCache.Load().(*cachedOpenAICodexTimezone); ok && cached != nil {
+		if time.Now().UnixNano() < cached.expiresAt {
+			return cached.value
+		}
+	}
+	result, _, _ := s.openAICodexTimezoneSF.Do(openAICodexTimezoneSFKey, func() (any, error) {
+		if cached, ok := s.openAICodexTimezoneCache.Load().(*cachedOpenAICodexTimezone); ok && cached != nil {
+			if time.Now().UnixNano() < cached.expiresAt {
+				return cached.value, nil
+			}
+		}
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		dbCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), openAICodexTimezoneDBTimeout)
+		defer cancel()
+		value, err := s.settingRepo.GetValue(dbCtx, SettingKeyOpenAICodexTimezone)
+		if err != nil && !errors.Is(err, ErrSettingNotFound) {
+			slog.Warn("failed to get openai codex timezone setting", "error", err)
+			s.openAICodexTimezoneCache.Store(&cachedOpenAICodexTimezone{
+				value:     "",
+				expiresAt: time.Now().Add(openAICodexTimezoneErrorTTL).UnixNano(),
+			})
+			return "", nil
+		}
+		tz := NormalizeCodexTimezone(value)
+		s.openAICodexTimezoneCache.Store(&cachedOpenAICodexTimezone{
+			value:     tz,
+			expiresAt: time.Now().Add(openAICodexTimezoneCacheTTL).UnixNano(),
+		})
+		return tz, nil
+	})
+	if tz, ok := result.(string); ok {
+		return tz
+	}
+	return ""
+}
+
+// WarmOpenAICodexFingerprintEnabled 启动时把 Codex 网络指纹总开关从 DB 读入并同步到
+// 进程级 flag（HTTP + WS 出站路径共用）。缺失/错误时保持默认开启。
+func (s *SettingService) WarmOpenAICodexFingerprintEnabled(ctx context.Context) {
+	if s == nil || s.settingRepo == nil {
+		return
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	dbCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), openAICodexOriginatorDBTimeout)
+	defer cancel()
+	value, err := s.settingRepo.GetValue(dbCtx, SettingKeyOpenAICodexFingerprintEnabled)
+	if err != nil {
+		return
+	}
+	if v := strings.TrimSpace(value); v != "" {
+		codexfp.SetEnabled(v == "true")
+	}
+}
+
 // GetOpenAICodexClientVersion 返回出站声明的 Codex 客户端版本号。
 // 优先级：管理员在面板覆写的版本 → 自动同步到的官方最新稳定版 → 内置常量。
 // 上游在容量紧张时按客户端身份分优先级降载，陈旧版本会被优先丢弃，故该值需保持跟随官方发布；
@@ -391,7 +522,8 @@ func (s *SettingService) GetOpenAICodexCanonicalUserAgent(ctx context.Context) s
 	version := s.GetOpenAICodexClientVersion(ctx)
 	ua := strings.TrimSpace(s.GetOpenAICodexUserAgent(ctx))
 	if ua == "" {
-		return buildCodexCLIUserAgent(version)
+		// 未填面板 UA：按配置的 originator（默认 codex-tui）+ 生效版本拼出规范 UA。
+		return buildCodexCLIUserAgentWithOriginator(s.GetOpenAICodexOriginator(ctx), version)
 	}
 	if rebuilt := openai.SetCodexUserAgentVersion(ua, version); rebuilt != "" {
 		return rebuilt

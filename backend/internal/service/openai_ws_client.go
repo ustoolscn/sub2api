@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/codexfp"
 	openaiwsv2 "github.com/Wei-Shaw/sub2api/internal/service/openai_ws_v2"
 	coderws "github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
@@ -83,6 +84,41 @@ type coderOpenAIWSClientDialer struct {
 	proxyClients map[string]*openAIWSProxyClientEntry
 	proxyHits    atomic.Int64
 	proxyMisses  atomic.Int64
+
+	codexMu      sync.Mutex
+	codexClients map[string]*http.Client
+}
+
+// codexFingerprintClient returns a cached *http.Client whose TLS ClientHello
+// matches the official Codex CLI, when wsURL targets a real Codex endpoint and
+// the fingerprint is enabled. Returns (nil, nil) to fall through to the generic
+// dial path (third-party/Grok WebSocket).
+func (d *coderOpenAIWSClientDialer) codexFingerprintClient(wsURL, proxyURL string) (*http.Client, error) {
+	if d == nil || !codexfp.Enabled() {
+		return nil, nil
+	}
+	parsed, err := url.Parse(strings.TrimSpace(wsURL))
+	if err != nil {
+		return nil, nil
+	}
+	if !codexfp.IsFingerprintHost(strings.ToLower(strings.TrimSpace(parsed.Hostname()))) {
+		return nil, nil
+	}
+	key := strings.TrimSpace(proxyURL)
+	d.codexMu.Lock()
+	defer d.codexMu.Unlock()
+	if d.codexClients == nil {
+		d.codexClients = make(map[string]*http.Client)
+	}
+	if client, ok := d.codexClients[key]; ok && client != nil {
+		return client, nil
+	}
+	client, err := codexfp.NewWebSocketHTTPClient(key, 0)
+	if err != nil {
+		return nil, err
+	}
+	d.codexClients[key] = client
+	return client, nil
 }
 
 // openAIWSHandshakeError keeps a bounded, non-logged HTTP error body so the
@@ -132,7 +168,16 @@ func (d *coderOpenAIWSClientDialer) Dial(
 			return true
 		},
 	}
-	if proxy := strings.TrimSpace(proxyURL); proxy != "" {
+	// Codex WebSocket endpoints get the official Codex CLI TLS ClientHello
+	// (rustls-shaped, ALPN http/1.1). Third-party/Grok WS keep the generic path.
+	if codexFP, err := d.codexFingerprintClient(targetURL, proxyURL); err != nil {
+		return nil, 0, nil, err
+	} else if codexFP != nil {
+		opts.HTTPClient = codexFP
+		// Real Codex (tokio-tungstenite) does not negotiate permessage-deflate,
+		// so advertising Sec-WebSocket-Extensions would itself be a tell.
+		opts.CompressionMode = coderws.CompressionDisabled
+	} else if proxy := strings.TrimSpace(proxyURL); proxy != "" {
 		proxyClient, err := d.proxyHTTPClient(proxy)
 		if err != nil {
 			return nil, 0, nil, err

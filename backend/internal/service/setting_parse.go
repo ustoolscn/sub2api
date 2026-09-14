@@ -246,6 +246,9 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyOpenAICodexClientVersion:                           "",
 		SettingKeyOpenAICodexClientVersionSynced:                     "",
 		SettingKeyOpenAICodexVersionAutoSyncEnabled:                  "true",
+		SettingKeyOpenAICodexFingerprintEnabled:                      "true",
+		SettingKeyOpenAICodexOriginator:                              openai.CodexDefaultOriginator,
+		SettingKeyOpenAICodexTimezone:                                "",
 		SettingPaymentVisibleMethodAlipaySource:                      "",
 		SettingPaymentVisibleMethodWxpaySource:                       "",
 		SettingPaymentVisibleMethodAlipayEnabled:                     "false",
@@ -891,6 +894,15 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	} else {
 		result.OpenAICodexVersionAutoSyncEnabled = true
 	}
+	// Codex 网络指纹默认开启：缺失/空值一律视为开启。
+	if v, ok := settings[SettingKeyOpenAICodexFingerprintEnabled]; ok && v != "" {
+		result.OpenAICodexFingerprintEnabled = v == "true"
+	} else {
+		result.OpenAICodexFingerprintEnabled = true
+	}
+	// Codex originator：仅接受官方一方 originator，非法/空值回退默认 codex-tui。
+	result.OpenAICodexOriginator = NormalizeCodexOriginator(settings[SettingKeyOpenAICodexOriginator])
+	result.OpenAICodexTimezone = NormalizeCodexTimezone(settings[SettingKeyOpenAICodexTimezone])
 	// codex_cli_only 加固
 	result.MinCodexVersion = settings[SettingKeyMinCodexVersion]
 	result.MaxCodexVersion = settings[SettingKeyMaxCodexVersion]

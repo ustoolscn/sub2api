@@ -16,6 +16,24 @@ const (
 type httpUpstreamProfileContextKey struct{}
 type httpUpstreamDisableRedirectsContextKey struct{}
 type httpUpstreamPublicHostsOnlyContextKey struct{}
+type httpUpstreamCodexFingerprintContextKey struct{}
+
+// WithHTTPUpstreamCodexFingerprint marks a request that must leave with the
+// official Codex CLI network fingerprint (rustls-shaped TLS ClientHello + hyper
+// HTTP/2 preface). Only set for real ChatGPT/OpenAI Codex endpoints so that
+// third-party OpenAI-compatible providers keep the generic transport.
+func WithHTTPUpstreamCodexFingerprint(ctx context.Context) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, httpUpstreamCodexFingerprintContextKey{}, true)
+}
+
+// HTTPUpstreamCodexFingerprint reports whether the Codex network fingerprint was
+// requested for this outbound request.
+func HTTPUpstreamCodexFingerprint(ctx context.Context) bool {
+	return ctx != nil && ctx.Value(httpUpstreamCodexFingerprintContextKey{}) == true
+}
 
 // WithHTTPUpstreamProfile injects an upstream transport profile into ctx.
 func WithHTTPUpstreamProfile(ctx context.Context, profile HTTPUpstreamProfile) context.Context {

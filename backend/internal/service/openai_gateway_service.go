@@ -61,7 +61,7 @@ const (
 	// 陈旧版本会被优先丢弃（HTTP 200 + 流内 server_is_overloaded）；非官方客户端配不出
 	// 官方身份时整体回退到本常量，因此它必须跟随官方 CLI 的当前发布版本，
 	// 落后多个版本会让这些请求稳定落在被优先丢弃的一侧。
-	codexCLIVersion = "0.146.0"
+	codexCLIVersion = "0.154.0"
 	// Codex 限额快照仅用于后台展示/诊断，不需要每个成功请求都立即落库。
 	openAICodexSnapshotPersistMinInterval = 30 * time.Second
 	// 配额自动暂停时，超过该时长仍未刷新的 used% 快照视为陈旧，不再据此暂停账号。
@@ -539,6 +539,9 @@ func NewOpenAIGatewayService(
 	if cfg != nil {
 		SetCodexIdentityEnforcementEnabled(!cfg.Gateway.DisableCodexIdentityEnforcement)
 	}
+	// Codex 网络指纹总开关的运行时来源是 DB 设置（默认开启）；进程级 flag 由
+	// SettingService.WarmOpenAICodexFingerprintEnabled 在启动时同步、保存时热更新。
+	// codexfp 包的 flag 默认即 true，此处无需再置。
 	svc := &OpenAIGatewayService{
 		accountRepo:         accountRepo,
 		usageLogRepo:        usageLogRepo,

@@ -542,6 +542,13 @@ export default {
         openaiCodexVersionAutoSync: 'Auto-sync Codex version',
         openaiCodexVersionAutoSyncHint: 'Fetches the latest stable client version from the official repository every 6 hours, so you never need to upgrade this service just to keep the version current. When disabled, only the version above or the built-in default is used.',
         openaiCodexVersionSyncedValue: 'Currently synced: {version}',
+        openaiCodexFingerprint: 'Codex network fingerprint',
+        openaiCodexFingerprintHint: 'Makes requests to the real ChatGPT/OpenAI Codex endpoints leave with the official Codex CLI network fingerprint (rustls-shaped TLS ClientHello + hyper HTTP/2 preface). When disabled, the Go standard-library transport is used, which exposes a Go fingerprint. Third-party OpenAI-compatible providers are unaffected.',
+        openaiCodexOriginator: 'Codex originator',
+        openaiCodexOriginatorHint: 'The originator declared to the upstream (the User-Agent prefix follows it). codex-tui matches the largest real-traffic cohort (interactive TUI); codex_cli_rs is the raw CLI default; codex_exec is non-interactive exec.',
+        openaiCodexTimezone: 'Codex timezone',
+        openaiCodexTimezonePlaceholder: 'e.g. America/New_York (empty = do not rewrite)',
+        openaiCodexTimezoneHint: 'Rewrites the <timezone> and <current_date> in the request body environment_context to match your egress IP region, so a shared account does not leak each user\'s real timezone. Use an IANA name. Leave empty to pass the client-reported timezone through unchanged.',
         codexHardeningTitle: "Codex Settings",
         codexClientRestrictionTitle: "Codex client restriction",
         codexHardeningDesc:

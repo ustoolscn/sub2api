@@ -35,10 +35,31 @@ func NormalizeCodexClientVersion(version string) string {
 // buildCodexCLIUserAgent 按版本号拼出规范 Codex TUI User-Agent。
 // UA 形态只在 codexCLIUserAgentSuffix 一处定义，避免多处拼装漂移。
 func buildCodexCLIUserAgent(version string) string {
+	return buildCodexCLIUserAgentWithOriginator(openai.CodexDefaultOriginator, version)
+}
+
+// buildCodexCLIUserAgentWithOriginator 按 originator + 版本号拼出规范 Codex User-Agent。
+// originator 非法/空时回退默认 codex-tui；版本非法/空时回退编译期兜底 UA。
+func buildCodexCLIUserAgentWithOriginator(originator, version string) string {
+	originator = NormalizeCodexOriginator(originator)
 	if version = NormalizeCodexClientVersion(version); version == "" {
-		return codexCLIUserAgent
+		if originator == openai.CodexDefaultOriginator {
+			return codexCLIUserAgent
+		}
+		version = codexCLIVersion
 	}
-	return openai.CodexDefaultOriginator + "/" + version + codexCLIUserAgentSuffix
+	return originator + "/" + version + codexCLIUserAgentSuffix
+}
+
+// NormalizeCodexOriginator 校验并归一化出站 Codex originator。
+// 仅接受官方一方 originator（codex-tui / codex_cli_rs / codex_exec 等）；
+// 空值或非官方值回退默认 codex-tui，避免把非法/伪造身份写进出站头。
+func NormalizeCodexOriginator(originator string) string {
+	originator = strings.TrimSpace(originator)
+	if originator == "" || !openai.IsCodexOfficialClientOriginator(originator) {
+		return openai.CodexDefaultOriginator
+	}
+	return originator
 }
 
 // codexIdentityEnforcement 控制 enforceCodexIdentityHeaders 是否强制统一出站身份，

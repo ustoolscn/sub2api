@@ -488,6 +488,15 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.OpenAICodexClientVersion != after.OpenAICodexClientVersion {
 		changed = append(changed, "openai_codex_client_version")
 	}
+	if before.OpenAICodexFingerprintEnabled != after.OpenAICodexFingerprintEnabled {
+		changed = append(changed, "openai_codex_fingerprint_enabled")
+	}
+	if before.OpenAICodexOriginator != after.OpenAICodexOriginator {
+		changed = append(changed, "openai_codex_originator")
+	}
+	if before.OpenAICodexTimezone != after.OpenAICodexTimezone {
+		changed = append(changed, "openai_codex_timezone")
+	}
 	if before.OpenAICodexVersionAutoSyncEnabled != after.OpenAICodexVersionAutoSyncEnabled {
 		changed = append(changed, "openai_codex_version_auto_sync_enabled")
 	}

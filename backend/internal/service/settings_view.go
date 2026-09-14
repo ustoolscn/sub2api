@@ -250,6 +250,9 @@ type SystemSettings struct {
 	OpenAICodexClientVersion               string // 出站声明的 Codex 客户端版本号（管理员覆写）；空值跟随自动同步值
 	OpenAICodexClientVersionSynced         string // 自动同步到的官方最新稳定版版本号（只读展示）
 	OpenAICodexVersionAutoSyncEnabled      bool   // 是否启用 Codex 客户端版本号自动同步（默认 true）
+	OpenAICodexFingerprintEnabled          bool   // 是否对真实 Codex 端点启用官方 Codex CLI 网络指纹伪装（默认 true）
+	OpenAICodexOriginator                  string // 出站声明的 Codex originator（默认 codex-tui）
+	OpenAICodexTimezone                    string // 出站请求体 environment_context 的时区（IANA 名，空=不改写）
 	MinCodexVersion                        string // codex_cli_only 最低 Codex 引擎版本；空=不检查
 	MaxCodexVersion                        string // codex_cli_only 最高 Codex 引擎版本；空=不检查
 	CodexCLIOnlyBlacklist                  string // codex_cli_only 全局黑名单 JSON（[]AllowedClientEntry，OR deny）

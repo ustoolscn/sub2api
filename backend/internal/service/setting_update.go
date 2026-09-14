@@ -13,6 +13,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/codexfp"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
@@ -485,6 +486,9 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyOpenAICodexUserAgent] = strings.TrimSpace(settings.OpenAICodexUserAgent)
 	updates[SettingKeyOpenAICodexClientVersion] = NormalizeCodexClientVersion(settings.OpenAICodexClientVersion)
 	updates[SettingKeyOpenAICodexVersionAutoSyncEnabled] = strconv.FormatBool(settings.OpenAICodexVersionAutoSyncEnabled)
+	updates[SettingKeyOpenAICodexFingerprintEnabled] = strconv.FormatBool(settings.OpenAICodexFingerprintEnabled)
+	updates[SettingKeyOpenAICodexOriginator] = NormalizeCodexOriginator(settings.OpenAICodexOriginator)
+	updates[SettingKeyOpenAICodexTimezone] = NormalizeCodexTimezone(settings.OpenAICodexTimezone)
 	// SettingKeyOpenAICodexClientVersionSynced 由自动同步任务独占写入，此处不得覆盖，
 	// 否则面板保存会把同步结果清空。
 	// codex_cli_only 加固
@@ -739,6 +743,19 @@ func (s *SettingService) refreshCachedSettings(settings *SystemSettings) {
 	// 版本号缓存只做失效，不在此重算：生效值还取决于自动同步写入的 synced 键，
 	// 这里没有它的最新值，重算会把同步结果覆盖成陈旧值。
 	s.InvalidateOpenAICodexClientVersionCache()
+	// Codex 网络指纹总开关：同步进程级 flag（HTTP + WS 两条出站路径共用），
+	// 并失效 originator/UA 派生缓存，保存后立即生效。
+	codexfp.SetEnabled(settings.OpenAICodexFingerprintEnabled)
+	s.openAICodexOriginatorSF.Forget(openAICodexOriginatorSFKey)
+	s.openAICodexOriginatorCache.Store(&cachedOpenAICodexOriginator{
+		value:     NormalizeCodexOriginator(settings.OpenAICodexOriginator),
+		expiresAt: time.Now().Add(openAICodexOriginatorCacheTTL).UnixNano(),
+	})
+	s.openAICodexTimezoneSF.Forget(openAICodexTimezoneSFKey)
+	s.openAICodexTimezoneCache.Store(&cachedOpenAICodexTimezone{
+		value:     NormalizeCodexTimezone(settings.OpenAICodexTimezone),
+		expiresAt: time.Now().Add(openAICodexTimezoneCacheTTL).UnixNano(),
+	})
 	openAIAdvancedSchedulerSettingSF.Forget(openAIAdvancedSchedulerSettingKey)
 	openAIAdvancedSchedulerSettingCache.Store(&cachedOpenAIAdvancedSchedulerSetting{
 		lowUpstreamRatePriorityEnabled: settings.OpenAILowUpstreamRatePriorityEnabled,

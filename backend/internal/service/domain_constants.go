@@ -707,6 +707,17 @@ const (
 	SettingKeyOpenAICodexClientVersionSynced = "openai_codex_client_version_synced"
 	// SettingKeyOpenAICodexVersionAutoSyncEnabled 是否启用 Codex 客户端版本号自动同步（默认 true）。
 	SettingKeyOpenAICodexVersionAutoSyncEnabled = "openai_codex_version_auto_sync_enabled"
+	// SettingKeyOpenAICodexFingerprintEnabled 是否对真实 ChatGPT/OpenAI Codex 端点启用官方 Codex CLI
+	// 网络指纹伪装（rustls 形态 TLS ClientHello + hyper 形态 HTTP/2 preface + 伪头顺序）。默认 true。
+	// 关闭后回退到 Go 标准库传输（会暴露 Go 网络指纹）。
+	SettingKeyOpenAICodexFingerprintEnabled = "openai_codex_fingerprint_enabled"
+	// SettingKeyOpenAICodexOriginator 网关出站声明的 Codex originator（默认 codex-tui）。
+	// UA 首段与该值同源；仅接受官方一方 originator（codex-tui / codex_cli_rs / codex_exec 等）。
+	SettingKeyOpenAICodexOriginator = "openai_codex_originator"
+	// SettingKeyOpenAICodexTimezone 出站请求体 environment_context 的时区（IANA 名，如
+	// "America/New_York"）。空值=不改写、透传客户端上报的时区。用于与出口 IP 地区对齐，
+	// 避免共享账号泄漏各下游用户真实时区。改写同时更新 <current_date>。
+	SettingKeyOpenAICodexTimezone = "openai_codex_timezone"
 	// SettingKeyOpenAIAllowClaudeCodeCodexPlugin 已废弃：历史全局开关只作为升级迁移输入读取。
 	// 迁移后等价规则写入 SettingKeyCodexCLIOnlyWhitelist，不再参与运行时判定。
 	SettingKeyOpenAIAllowClaudeCodeCodexPlugin = "openai_allow_claude_code_codex_plugin"
