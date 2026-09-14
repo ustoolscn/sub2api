@@ -249,6 +249,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyOpenAICodexFingerprintEnabled:                      "true",
 		SettingKeyOpenAICodexOriginator:                              openai.CodexDefaultOriginator,
 		SettingKeyOpenAICodexTimezone:                                "",
+		SettingKeyOpenAICodexAccountPersonaEnabled:                   "false",
 		SettingPaymentVisibleMethodAlipaySource:                      "",
 		SettingPaymentVisibleMethodWxpaySource:                       "",
 		SettingPaymentVisibleMethodAlipayEnabled:                     "false",
@@ -903,6 +904,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	// Codex originator：仅接受官方一方 originator，非法/空值回退默认 codex-tui。
 	result.OpenAICodexOriginator = NormalizeCodexOriginator(settings[SettingKeyOpenAICodexOriginator])
 	result.OpenAICodexTimezone = NormalizeCodexTimezone(settings[SettingKeyOpenAICodexTimezone])
+	result.OpenAICodexAccountPersonaEnabled = settings[SettingKeyOpenAICodexAccountPersonaEnabled] == "true"
 	// codex_cli_only 加固
 	result.MinCodexVersion = settings[SettingKeyMinCodexVersion]
 	result.MaxCodexVersion = settings[SettingKeyMaxCodexVersion]

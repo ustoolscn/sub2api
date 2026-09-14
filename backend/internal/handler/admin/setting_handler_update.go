@@ -260,6 +260,7 @@ type UpdateSettingsRequest struct {
 	OpenAICodexFingerprintEnabled          *bool   `json:"openai_codex_fingerprint_enabled"`
 	OpenAICodexOriginator                  *string `json:"openai_codex_originator"`
 	OpenAICodexTimezone                    *string `json:"openai_codex_timezone"`
+	OpenAICodexAccountPersonaEnabled       *bool   `json:"openai_codex_account_persona_enabled"`
 
 	// codex_cli_only 加固（global-only）
 	MinCodexVersion                      string `json:"min_codex_version"`
@@ -1789,6 +1790,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.OpenAICodexTimezone
 		}(),
+		OpenAICodexAccountPersonaEnabled: func() bool {
+			if req.OpenAICodexAccountPersonaEnabled != nil {
+				return *req.OpenAICodexAccountPersonaEnabled
+			}
+			return previousSettings.OpenAICodexAccountPersonaEnabled
+		}(),
 		MinCodexVersion:       strings.TrimSpace(req.MinCodexVersion),
 		MaxCodexVersion:       strings.TrimSpace(req.MaxCodexVersion),
 		CodexCLIOnlyBlacklist: strings.TrimSpace(req.CodexCLIOnlyBlacklist),
@@ -2334,6 +2341,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		OpenAICodexFingerprintEnabled:                          updatedSettings.OpenAICodexFingerprintEnabled,
 		OpenAICodexOriginator:                                  updatedSettings.OpenAICodexOriginator,
 		OpenAICodexTimezone:                                    updatedSettings.OpenAICodexTimezone,
+		OpenAICodexAccountPersonaEnabled:                       updatedSettings.OpenAICodexAccountPersonaEnabled,
 		MinCodexVersion:                                        updatedSettings.MinCodexVersion,
 		MaxCodexVersion:                                        updatedSettings.MaxCodexVersion,
 		CodexCLIOnlyBlacklist:                                  updatedSettings.CodexCLIOnlyBlacklist,

@@ -718,6 +718,9 @@ const (
 	// "America/New_York"）。空值=不改写、透传客户端上报的时区。用于与出口 IP 地区对齐，
 	// 避免共享账号泄漏各下游用户真实时区。改写同时更新 <current_date>。
 	SettingKeyOpenAICodexTimezone = "openai_codex_timezone"
+	// SettingKeyOpenAICodexAccountPersonaEnabled 是否为每个 OAuth 凭据分配稳定的 UA persona
+	// （按凭据确定性派生一个 OS/终端指纹段），默认 false。开启后共享账号不再全体共用同一 UA。
+	SettingKeyOpenAICodexAccountPersonaEnabled = "openai_codex_account_persona_enabled"
 	// SettingKeyOpenAIAllowClaudeCodeCodexPlugin 已废弃：历史全局开关只作为升级迁移输入读取。
 	// 迁移后等价规则写入 SettingKeyCodexCLIOnlyWhitelist，不再参与运行时判定。
 	SettingKeyOpenAIAllowClaudeCodeCodexPlugin = "openai_allow_claude_code_codex_plugin"

@@ -306,6 +306,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		OpenAICodexFingerprintEnabled:                          settings.OpenAICodexFingerprintEnabled,
 		OpenAICodexOriginator:                                  settings.OpenAICodexOriginator,
 		OpenAICodexTimezone:                                    settings.OpenAICodexTimezone,
+		OpenAICodexAccountPersonaEnabled:                       settings.OpenAICodexAccountPersonaEnabled,
 		MinCodexVersion:                                        settings.MinCodexVersion,
 		MaxCodexVersion:                                        settings.MaxCodexVersion,
 		CodexCLIOnlyBlacklist:                                  settings.CodexCLIOnlyBlacklist,

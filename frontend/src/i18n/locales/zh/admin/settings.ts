@@ -542,6 +542,8 @@ export default {
         openaiCodexTimezone: 'Codex 时区',
         openaiCodexTimezonePlaceholder: '如 America/New_York（留空=不改写）',
         openaiCodexTimezoneHint: '改写请求体 environment_context 里的 <timezone> 与 <current_date>，与出口 IP 地区对齐，避免共享账号泄漏每个用户的真实时区。填 IANA 名称。留空则原样透传客户端上报的时区。',
+        openaiCodexAccountPersona: '每账号 UA persona',
+        openaiCodexAccountPersonaHint: '为每个 OAuth 凭据按凭据确定性派生一个稳定的 OS/终端指纹段，避免共享账号全体共用同一身份。版本段仍跟随生效的客户端版本。默认关闭。',
         codexHardeningTitle: 'Codex 设置',
         codexClientRestrictionTitle: 'Codex 客户端限制',
         codexHardeningDesc:

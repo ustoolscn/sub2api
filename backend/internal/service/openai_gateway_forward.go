@@ -1538,5 +1538,6 @@ func (s *OpenAIGatewayService) codexIdentityOverrideUA(account *Account) string 
 	if s != nil && s.cfg != nil && s.cfg.Gateway.ForceCodexCLI {
 		return ""
 	}
-	return account.GetOpenAIUserAgent()
+	// 账号级显式 UA 优先；否则在启用 per-account persona 时按凭据派生稳定 UA persona。
+	return codexAccountOverrideUA(account)
 }

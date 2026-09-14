@@ -549,6 +549,8 @@ export default {
         openaiCodexTimezone: 'Codex timezone',
         openaiCodexTimezonePlaceholder: 'e.g. America/New_York (empty = do not rewrite)',
         openaiCodexTimezoneHint: 'Rewrites the <timezone> and <current_date> in the request body environment_context to match your egress IP region, so a shared account does not leak each user\'s real timezone. Use an IANA name. Leave empty to pass the client-reported timezone through unchanged.',
+        openaiCodexAccountPersona: 'Per-account UA persona',
+        openaiCodexAccountPersonaHint: 'Gives each OAuth credential a stable, deterministically-derived OS/terminal segment in its User-Agent, so a shared account does not put every user on one identical identity. Version segments still follow the effective client version. Off by default.',
         codexHardeningTitle: "Codex Settings",
         codexClientRestrictionTitle: "Codex client restriction",
         codexHardeningDesc:

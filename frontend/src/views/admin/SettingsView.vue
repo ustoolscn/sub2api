@@ -5800,6 +5800,29 @@
                 <Toggle v-model="form.openai_codex_fingerprint_enabled" />
               </div>
 
+              <!-- 每账号 UA persona -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <label
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{
+                      t(
+                        "admin.settings.gatewayForwarding.openaiCodexAccountPersona",
+                      )
+                    }}
+                  </label>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{
+                      t(
+                        "admin.settings.gatewayForwarding.openaiCodexAccountPersonaHint",
+                      )
+                    }}
+                  </p>
+                </div>
+                <Toggle v-model="form.openai_codex_account_persona_enabled" />
+              </div>
+
               <!-- Codex originator -->
               <div>
                 <label
@@ -9925,6 +9948,7 @@ const form = reactive<SettingsForm>({
   openai_codex_fingerprint_enabled: true,
   openai_codex_originator: "codex-tui",
   openai_codex_timezone: "",
+  openai_codex_account_persona_enabled: false,
   // codex_cli_only 加固
   min_codex_version: "",
   max_codex_version: "",
@@ -11536,6 +11560,8 @@ async function saveSettings() {
       openai_codex_originator:
         form.openai_codex_originator?.trim() || "codex-tui",
       openai_codex_timezone: form.openai_codex_timezone?.trim() || "",
+      openai_codex_account_persona_enabled:
+        form.openai_codex_account_persona_enabled,
       min_codex_version: form.min_codex_version?.trim() || "",
       max_codex_version: form.max_codex_version?.trim() || "",
       codex_cli_only_allow_app_server_clients:

@@ -253,6 +253,7 @@ type SystemSettings struct {
 	OpenAICodexFingerprintEnabled          bool   // 是否对真实 Codex 端点启用官方 Codex CLI 网络指纹伪装（默认 true）
 	OpenAICodexOriginator                  string // 出站声明的 Codex originator（默认 codex-tui）
 	OpenAICodexTimezone                    string // 出站请求体 environment_context 的时区（IANA 名，空=不改写）
+	OpenAICodexAccountPersonaEnabled       bool   // 是否为每个 OAuth 凭据分配稳定 UA persona（默认 false）
 	MinCodexVersion                        string // codex_cli_only 最低 Codex 引擎版本；空=不检查
 	MaxCodexVersion                        string // codex_cli_only 最高 Codex 引擎版本；空=不检查
 	CodexCLIOnlyBlacklist                  string // codex_cli_only 全局黑名单 JSON（[]AllowedClientEntry，OR deny）

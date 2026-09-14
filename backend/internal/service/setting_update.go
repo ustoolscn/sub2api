@@ -489,6 +489,7 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyOpenAICodexFingerprintEnabled] = strconv.FormatBool(settings.OpenAICodexFingerprintEnabled)
 	updates[SettingKeyOpenAICodexOriginator] = NormalizeCodexOriginator(settings.OpenAICodexOriginator)
 	updates[SettingKeyOpenAICodexTimezone] = NormalizeCodexTimezone(settings.OpenAICodexTimezone)
+	updates[SettingKeyOpenAICodexAccountPersonaEnabled] = strconv.FormatBool(settings.OpenAICodexAccountPersonaEnabled)
 	// SettingKeyOpenAICodexClientVersionSynced 由自动同步任务独占写入，此处不得覆盖，
 	// 否则面板保存会把同步结果清空。
 	// codex_cli_only 加固
@@ -746,6 +747,7 @@ func (s *SettingService) refreshCachedSettings(settings *SystemSettings) {
 	// Codex 网络指纹总开关：同步进程级 flag（HTTP + WS 两条出站路径共用），
 	// 并失效 originator/UA 派生缓存，保存后立即生效。
 	codexfp.SetEnabled(settings.OpenAICodexFingerprintEnabled)
+	SetCodexAccountPersonaEnabled(settings.OpenAICodexAccountPersonaEnabled)
 	s.openAICodexOriginatorSF.Forget(openAICodexOriginatorSFKey)
 	s.openAICodexOriginatorCache.Store(&cachedOpenAICodexOriginator{
 		value:     NormalizeCodexOriginator(settings.OpenAICodexOriginator),

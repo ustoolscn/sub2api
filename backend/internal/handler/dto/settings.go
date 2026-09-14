@@ -220,6 +220,7 @@ type SystemSettings struct {
 	OpenAICodexFingerprintEnabled          bool   `json:"openai_codex_fingerprint_enabled"`
 	OpenAICodexOriginator                  string `json:"openai_codex_originator"`
 	OpenAICodexTimezone                    string `json:"openai_codex_timezone"`
+	OpenAICodexAccountPersonaEnabled       bool   `json:"openai_codex_account_persona_enabled"`
 
 	// codex_cli_only 加固
 	MinCodexVersion                      string `json:"min_codex_version"`

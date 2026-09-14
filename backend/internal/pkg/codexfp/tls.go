@@ -143,15 +143,14 @@ func Handshake(ctx context.Context, conn net.Conn, addr string, opts HandshakeOp
 func StdConnectionState(uconn *utls.UConn) *tls.ConnectionState {
 	st := uconn.ConnectionState()
 	return &tls.ConnectionState{
-		Version:                    st.Version,
-		HandshakeComplete:          st.HandshakeComplete,
-		DidResume:                  st.DidResume,
-		CipherSuite:                st.CipherSuite,
-		NegotiatedProtocol:         st.NegotiatedProtocol,
-		NegotiatedProtocolIsMutual: true,
-		ServerName:                 st.ServerName,
-		PeerCertificates:           st.PeerCertificates,
-		VerifiedChains:             st.VerifiedChains,
-		OCSPResponse:               st.OCSPResponse,
+		Version:            st.Version,
+		HandshakeComplete:  st.HandshakeComplete,
+		DidResume:          st.DidResume,
+		CipherSuite:        st.CipherSuite,
+		NegotiatedProtocol: st.NegotiatedProtocol,
+		ServerName:         st.ServerName,
+		PeerCertificates:   st.PeerCertificates,
+		VerifiedChains:     st.VerifiedChains,
+		OCSPResponse:       st.OCSPResponse,
 	}
 }

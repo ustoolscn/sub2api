@@ -433,11 +433,14 @@ func (s *SettingService) WarmOpenAICodexFingerprintEnabled(ctx context.Context) 
 	dbCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), openAICodexOriginatorDBTimeout)
 	defer cancel()
 	value, err := s.settingRepo.GetValue(dbCtx, SettingKeyOpenAICodexFingerprintEnabled)
-	if err != nil {
-		return
+	if err == nil {
+		if v := strings.TrimSpace(value); v != "" {
+			codexfp.SetEnabled(v == "true")
+		}
 	}
-	if v := strings.TrimSpace(value); v != "" {
-		codexfp.SetEnabled(v == "true")
+	// Per-account UA persona (default off) shares the same startup sync.
+	if persona, perr := s.settingRepo.GetValue(dbCtx, SettingKeyOpenAICodexAccountPersonaEnabled); perr == nil {
+		SetCodexAccountPersonaEnabled(strings.TrimSpace(persona) == "true")
 	}
 }
 
