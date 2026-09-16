@@ -278,8 +278,37 @@ pnpm install --frozen-lockfile
                                src/views/admin/__tests__/SettingsView.spec.ts
 ```
 
-> 小提示：新版 pnpm 可能因 `esbuild` / `vue-demi` 的 ignored build scripts 让 `pnpm typecheck` 前置检查失败，
-> 直接调 `./node_modules/.bin/` 下的二进制即可绕过（或执行一次 `pnpm approve-builds`）。
+#### 本地验证的两个已知坑（都不是代码问题，别浪费时间排查）
+
+**1. `pnpm install --frozen-lockfile` 在 pnpm 10+ 会失败**
+
+报错 `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH: The current "overrides" configuration doesn't match the value found in the lockfile`。
+根因：新版 pnpm **不再读取 `package.json` 里的 `pnpm.overrides` 字段**（它会先警告
+`The "pnpm" field in package.json is no longer read by pnpm`），于是认为当前 overrides 为空，
+而 lockfile 里有 4 条（`js-cookie` / `form-data` / `postcss` / `dompurify`）→ 判定不匹配。
+
+**CI 不受影响**：workflow 固定用 pnpm 9（`pnpm/action-setup@v6` + `version: 9`），pnpm 9 会正常读取该字段。
+本地直接调 `./node_modules/.bin/vue-tsc`、`./node_modules/.bin/vitest` 绕过安装前置检查即可。
+（另外新版 pnpm 还会因 `esbuild` / `vue-demi` 的 ignored build scripts 让 `pnpm typecheck` 前置检查失败，同样绕过或执行一次 `pnpm approve-builds`。）
+
+**2. 官方自带的 flaky 测试：`TestOllamaProbeCallback_StaleLongDoesNotOverrideNewShort`**
+
+位置 `backend/internal/service/ratelimit_service_ollama_429_test.go:405`，
+断言 `stale long callback must not pass the CAS`（`Should be zero, but was 1`）。
+
+实测（独立进程各采样 3 次）：
+
+| | run1 | run2 | run3 |
+|---|---|---|---|
+| 合并后 `my` | FAIL | FAIL | PASS |
+| 纯官方 `origin/main` | PASS | FAIL | FAIL |
+
+**两边都随机失败**，即这是官方测试自身的时间竞态（用 `time.Now().Add(5s)` 与 `handle429` 的
+CAS generation 比较），**与本 fork 的改动无关**。该测试也不支持 `-count>1`（第二遍必挂）。
+
+> ⚠️ 合并后若只有这一个 unit 测试变红，**不要**当成合并引入的问题，重跑即可。
+> 排查前请先在纯 `origin/main` 上用独立进程多跑几次对照——单次结果会给出相反的错误结论
+> （已排除包级副作用：`internal/service` 无 `TestMain`，本 fork 新增/修改的文件均无 `init()`）。
 
 ### 合并后的自检清单
 

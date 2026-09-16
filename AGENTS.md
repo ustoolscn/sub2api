@@ -69,6 +69,10 @@ git merge origin/main
 3. **前端 i18n 中英文案必须成对**，否则 `localeKeyCompleteness.spec.ts` 失败。
 4. **`buildUpstreamRequest` / passthrough 末尾的 `applyCodexFingerprintTransport`
    必须保持在所有请求头改写之后**，否则请求头顺序固定会失效。
+5. **`TestOllamaProbeCallback_StaleLongDoesNotOverrideNewShort` 是官方自带的 flaky 测试**
+   （时间竞态，纯 `origin/main` 上同样随机失败，且不支持 `-count>1`）。
+   合并后若只有它变红，重跑即可，**不要**当成合并引入的问题。详见
+   `docs/FORK_CHANGES.md` 第 8 节「本地验证的两个已知坑」。
 
 ---
 
