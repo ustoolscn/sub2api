@@ -128,6 +128,8 @@ scripts
 #openspec/
 code-reviews/
 AGENTS.md
+# [fork] 本 fork 的自有改动说明必须进版本库，故放行根目录 AGENTS.md（见 docs/FORK_CHANGES.md）
+!AGENTS.md
 backend/cmd/server/server
 deploy/docker-compose.override.yml
 .gocache/
@@ -144,6 +146,8 @@ docs/*
 !docs/legal/
 !docs/legal/*.md
 !docs/screenshots/
+# [fork] 自有改动记录
+!docs/FORK_CHANGES.md
 docs/screenshots/*
 !docs/screenshots/mobile-account-actions-menu.png
 .serena/
