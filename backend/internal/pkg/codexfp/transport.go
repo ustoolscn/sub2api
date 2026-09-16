@@ -61,11 +61,16 @@ type TransportOptions struct {
 // preface match the official Codex CLI. It negotiates h2 via ALPN and falls
 // back to http/1.1 only if the server does. Auto gzip is disabled because the
 // real client advertises no accept-encoding.
+//
+// HTTP/2 is deliberately not forced: req's forced-h2 mode routes every request
+// through its internal HTTP/2 dialer, which ignores Proxy and connects to the
+// origin directly. The default mode dials (optionally through the proxy), runs
+// the custom TLS handshake, and hands h2-negotiated connections to the same
+// HTTP/2 transport, so the SETTINGS frame and connection flow still apply.
 func NewTransport(opts TransportOptions) (http.RoundTripper, error) {
 	t := req.NewTransport()
 	t.SetHTTP2SettingsFrame(h2Settings...)
 	t.SetHTTP2ConnectionFlow(h2ConnectionFlow)
-	t.EnableForceHTTP2()
 	t.DisableCompression = true
 
 	if opts.MaxIdleConns > 0 {

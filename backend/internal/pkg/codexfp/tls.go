@@ -148,9 +148,14 @@ func StdConnectionState(uconn *utls.UConn) *tls.ConnectionState {
 		DidResume:          st.DidResume,
 		CipherSuite:        st.CipherSuite,
 		NegotiatedProtocol: st.NegotiatedProtocol,
-		ServerName:         st.ServerName,
-		PeerCertificates:   st.PeerCertificates,
-		VerifiedChains:     st.VerifiedChains,
-		OCSPResponse:       st.OCSPResponse,
+		// req's HTTP/2 dialer refuses a connection whose ALPN result is not
+		// flagged mutual ("http2: could not negotiate protocol mutually"), and
+		// its HTTP/1 path silently downgrades an h2 connection without it.
+		// crypto/tls always sets this to true; mirror that.
+		NegotiatedProtocolIsMutual: true, //nolint:staticcheck // req reads it
+		ServerName:                 st.ServerName,
+		PeerCertificates:           st.PeerCertificates,
+		VerifiedChains:             st.VerifiedChains,
+		OCSPResponse:               st.OCSPResponse,
 	}
 }
