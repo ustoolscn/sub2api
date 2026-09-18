@@ -323,10 +323,10 @@ export default {
         signNameHint: '必须与阿里云短信控制台已审核通过的签名完全一致。',
         templateCode: '短信模板 CODE',
         templateCodePlaceholder: 'SMS_123456789',
-        templateCodeHint: '模板内容需包含验证码变量，例如：您的验证码为 ${code}。',
+        templateCodeHint: "模板内容需包含验证码变量，例如：您的验证码为 {'$'}{'{'}code{'}'}。",
         templateParamKey: '模板变量名',
         templateParamKeyPlaceholder: 'code',
-        templateParamKeyHint: '对应模板里的 ${变量} 名称，默认为 code。',
+        templateParamKeyHint: "对应模板里的 {'$'}{'{'}code{'}'} 变量名，默认为 code。",
       },
       dingtalk: {
         title: '钉钉登录',

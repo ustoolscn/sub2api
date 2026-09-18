@@ -325,10 +325,10 @@ export default {
         signNameHint: 'Must match an approved sign name in the Aliyun SMS console.',
         templateCode: 'SMS template code',
         templateCodePlaceholder: 'SMS_123456789',
-        templateCodeHint: 'The template must include a code variable, e.g. Your code is ${code}.',
+        templateCodeHint: "The template must include a code variable, e.g. Your code is {'$'}{'{'}code{'}'}.",
         templateParamKey: 'Template variable',
         templateParamKeyPlaceholder: 'code',
-        templateParamKeyHint: 'The ${variable} name in the template. Defaults to code.',
+        templateParamKeyHint: "The {'$'}{'{'}code{'}'} variable name in the template. Defaults to code.",
       },
       dingtalk: {
         title: 'DingTalk Login',
