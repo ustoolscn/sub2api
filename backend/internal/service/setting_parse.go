@@ -91,6 +91,12 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyWeChatConnectScopes:                       "snsapi_login",
 		SettingKeyWeChatConnectRedirectURL:                  "",
 		SettingKeyWeChatConnectFrontendRedirectURL:          defaultWeChatConnectFrontend,
+		SettingKeyPhoneLoginEnabled:                         "false",
+		SettingKeyPhoneSMSAliyunAccessKeyID:                 "",
+		SettingKeyPhoneSMSAliyunAccessKeySecret:             "",
+		SettingKeyPhoneSMSAliyunSignName:                    "",
+		SettingKeyPhoneSMSAliyunTemplateCode:                "",
+		SettingKeyPhoneSMSAliyunTemplateParamKey:            "code",
 		SettingKeyGitHubOAuthEnabled:                        "false",
 		SettingKeyGitHubOAuthClientID:                       "",
 		SettingKeyGitHubOAuthClientSecret:                   "",
@@ -465,6 +471,14 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		result.LinuxDoConnectClientSecret = strings.TrimSpace(linuxDoBase.ClientSecret)
 	}
 	result.LinuxDoConnectClientSecretConfigured = result.LinuxDoConnectClientSecret != ""
+
+	result.PhoneLoginEnabled = settings[SettingKeyPhoneLoginEnabled] == "true"
+	result.PhoneSMSAliyunAccessKeyID = strings.TrimSpace(settings[SettingKeyPhoneSMSAliyunAccessKeyID])
+	result.PhoneSMSAliyunAccessKeySecret = strings.TrimSpace(settings[SettingKeyPhoneSMSAliyunAccessKeySecret])
+	result.PhoneSMSAliyunAccessKeySecretConfigured = result.PhoneSMSAliyunAccessKeySecret != ""
+	result.PhoneSMSAliyunSignName = strings.TrimSpace(settings[SettingKeyPhoneSMSAliyunSignName])
+	result.PhoneSMSAliyunTemplateCode = strings.TrimSpace(settings[SettingKeyPhoneSMSAliyunTemplateCode])
+	result.PhoneSMSAliyunTemplateParamKey = DefaultPhoneSMSTemplateParamKey(settings[SettingKeyPhoneSMSAliyunTemplateParamKey])
 
 	// DingTalk Connect 设置：
 	// - 兼容 config.yaml/env

@@ -9,6 +9,7 @@ import { authAPI, isTotp2FARequired, passkeyAPI, type LoginResponse } from '@/ap
 import type {
   User,
   LoginRequest,
+  PhoneLoginRequest,
   RegisterRequest,
   AuthResponse,
   ActionCaptchaRequestProof
@@ -263,6 +264,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function loginWithPhone(credentials: PhoneLoginRequest): Promise<LoginResponse> {
+    try {
+      const response = await authAPI.phoneLogin(credentials)
+      if (isTotp2FARequired(response)) {
+        return response
+      }
+      setAuthFromResponse(response)
+      return response
+    } catch (error) {
+      clearAuth({ preservePendingAuthSession: pendingAuthSession.value !== null })
+      throw error
+    }
+  }
+
   /**
    * Complete login with 2FA code
    * @param tempToken - Temporary token from initial login
@@ -503,6 +518,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Actions
     login,
+    loginWithPhone,
     loginWithPasskey,
     login2FA,
     register,

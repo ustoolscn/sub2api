@@ -69,6 +69,15 @@ type SystemSettings struct {
 	LinuxDoConnectClientSecretConfigured bool
 	LinuxDoConnectRedirectURL            string
 
+	// 手机号登录（阿里云短信）
+	PhoneLoginEnabled                      bool
+	PhoneSMSAliyunAccessKeyID              string
+	PhoneSMSAliyunAccessKeySecret          string
+	PhoneSMSAliyunAccessKeySecretConfigured bool
+	PhoneSMSAliyunSignName                 string
+	PhoneSMSAliyunTemplateCode             string
+	PhoneSMSAliyunTemplateParamKey         string
+
 	// DingTalk Connect OAuth 登录
 	DingTalkConnectEnabled                 bool
 	DingTalkConnectClientID                string
@@ -371,6 +380,7 @@ type PublicSettings struct {
 	CustomEndpoints             string // JSON array of custom endpoints
 
 	LinuxDoOAuthEnabled      bool
+	PhoneLoginEnabled        bool
 	DingTalkOAuthEnabled     bool
 	WeChatOAuthEnabled       bool
 	WeChatOAuthOpenEnabled   bool

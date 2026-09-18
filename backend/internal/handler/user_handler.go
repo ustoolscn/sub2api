@@ -99,6 +99,7 @@ type userProfileResponse struct {
 	OIDCBound         bool                                   `json:"oidc_bound"`
 	WeChatBound       bool                                   `json:"wechat_bound"`
 	DingTalkBound     bool                                   `json:"dingtalk_bound"`
+	PhoneBound        bool                                   `json:"phone_bound"`
 }
 
 type userProfileSourceContext struct {
@@ -247,6 +248,15 @@ type SendEmailBindingCodeRequest struct {
 	Email string `json:"email" binding:"required,email"`
 }
 
+type BindPhoneIdentityRequest struct {
+	Phone string `json:"phone" binding:"required"`
+	Code  string `json:"code" binding:"required"`
+}
+
+type SendPhoneBindingCodeRequest struct {
+	Phone string `json:"phone" binding:"required"`
+}
+
 // StartIdentityBinding returns the backend authorize URL for starting a third-party identity bind flow.
 // POST /api/v1/user/auth-identities/bind/start
 func (h *UserHandler) StartIdentityBinding(c *gin.Context) {
@@ -372,6 +382,68 @@ func (h *UserHandler) SendEmailBindingCode(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{"message": "Verification code sent successfully"})
+}
+
+// SendPhoneBindingCode sends an SMS code for binding a phone number to the current user.
+// POST /api/v1/user/account-bindings/phone/send-code
+func (h *UserHandler) SendPhoneBindingCode(c *gin.Context) {
+	if _, ok := middleware2.GetAuthSubjectFromContext(c); !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+	if h.authService == nil {
+		response.InternalError(c, "Auth service not configured")
+		return
+	}
+
+	var req SendPhoneBindingCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	result, err := h.authService.SendPhoneVerifyCode(c.Request.Context(), req.Phone)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, SendVerifyCodeResponse{
+		Message:   "Verification code sent successfully",
+		Countdown: result.Countdown,
+	})
+}
+
+// BindPhoneIdentity verifies an SMS code and binds the phone to the current user.
+// POST /api/v1/user/account-bindings/phone
+func (h *UserHandler) BindPhoneIdentity(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+	if h.authService == nil {
+		response.InternalError(c, "Auth service not configured")
+		return
+	}
+
+	var req BindPhoneIdentityRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	updatedUser, err := h.authService.BindPhoneIdentity(c.Request.Context(), subject.UserID, req.Phone, req.Code)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	profileResp, err := h.buildUserProfileResponse(c.Request.Context(), subject.UserID, updatedUser)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, profileResp)
 }
 
 // SendNotifyEmailCodeRequest represents the request to send notify email verification code
@@ -561,6 +633,7 @@ func userProfileResponseFromService(user *service.User, identities service.UserI
 		OIDCBound:         identities.OIDC.Bound,
 		WeChatBound:       identities.WeChat.Bound,
 		DingTalkBound:     identities.DingTalk.Bound,
+		PhoneBound:        identities.Phone.Bound,
 	}
 }
 
@@ -571,6 +644,7 @@ func userProfileBindingMap(identities service.UserIdentitySummarySet) map[string
 		"oidc":     identities.OIDC,
 		"wechat":   identities.WeChat,
 		"dingtalk": identities.DingTalk,
+		"phone":    identities.Phone,
 	}
 }
 

@@ -81,6 +81,13 @@ type SystemSettings struct {
 	LinuxDoConnectClientSecretConfigured bool   `json:"linuxdo_connect_client_secret_configured"`
 	LinuxDoConnectRedirectURL            string `json:"linuxdo_connect_redirect_url"`
 
+	PhoneLoginEnabled                       bool   `json:"phone_login_enabled"`
+	PhoneSMSAliyunAccessKeyID               string `json:"phone_sms_aliyun_access_key_id"`
+	PhoneSMSAliyunAccessKeySecretConfigured bool   `json:"phone_sms_aliyun_access_key_secret_configured"`
+	PhoneSMSAliyunSignName                  string `json:"phone_sms_aliyun_sign_name"`
+	PhoneSMSAliyunTemplateCode              string `json:"phone_sms_aliyun_template_code"`
+	PhoneSMSAliyunTemplateParamKey          string `json:"phone_sms_aliyun_template_param_key"`
+
 	DingTalkConnectEnabled                 bool   `json:"dingtalk_connect_enabled"`
 	DingTalkConnectClientID                string `json:"dingtalk_connect_client_id"`
 	DingTalkConnectClientSecretConfigured  bool   `json:"dingtalk_connect_client_secret_configured"`
@@ -405,6 +412,7 @@ type PublicSettings struct {
 	CustomEndpoints                     []CustomEndpoint         `json:"custom_endpoints"`
 	DingTalkOAuthEnabled                bool                     `json:"dingtalk_oauth_enabled"`
 	LinuxDoOAuthEnabled                 bool                     `json:"linuxdo_oauth_enabled"`
+	PhoneLoginEnabled                   bool                     `json:"phone_login_enabled"`
 	WeChatOAuthEnabled                  bool                     `json:"wechat_oauth_enabled"`
 	WeChatOAuthOpenEnabled              bool                     `json:"wechat_oauth_open_enabled"`
 	WeChatOAuthMPEnabled                bool                     `json:"wechat_oauth_mp_enabled"`

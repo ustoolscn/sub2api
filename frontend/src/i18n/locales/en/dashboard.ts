@@ -948,6 +948,7 @@ export default {
       bindAction: 'Bind {providerName}',
       bindSuccess: 'Account linked successfully',
       emailPlaceholder: 'Enter email address',
+      phonePlaceholder: 'Enter mobile number',
       codePlaceholder: 'Enter verification code',
       passwordPlaceholder: 'Set a login password',
       replaceEmailPasswordPlaceholder: 'Enter current password',
@@ -971,6 +972,7 @@ export default {
         dingtalk: 'DingTalk',
         oidc: '{providerName}',
         wechat: 'WeChat',
+        phone: 'Phone',
       },
       notes: {
         emailManagedFromProfile: 'Primary email is managed in the profile form',

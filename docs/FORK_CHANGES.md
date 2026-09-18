@@ -346,3 +346,34 @@ CAS generation 比较），**与本 fork 的改动无关**。该测试也不支�
 - 鉴权：内置 `GITHUB_TOKEN`（`permissions: packages: write`），**无需任何 Docker Hub 凭据**
 
 官方自带的 `release.yml` 等 workflow 未改动。
+
+---
+
+## 11. 自有功能：手机号登录（阿里云短信）
+
+在官方邮箱/OAuth 登录之外，增加中国大陆手机号 + 短信验证码登录/注册/绑定。
+
+**行为**
+- 登录页在公开设置 `phone_login_enabled=true` 且短信凭证齐全时显示「邮箱 / 手机号」切换。
+- 已绑定手机号：验证码登录（支持 TOTP 第二步）。
+- 未绑定且站点开放注册：自动创建账号（合成邮箱 `{86xxxxxxxxxx}@phone.invalid`，随机密码）；邀请码开启时需填写邀请码。
+- 资料页可绑定/解绑手机号（解绑要求已有其他登录方式）。
+
+**新增文件**
+- `backend/migrations/239_add_phone_provider_type.sql`
+- `backend/internal/service/phone.go` / `phone_sms.go` / `phone_auth.go` / `phone_test.go`
+- `backend/internal/handler/auth_handler_phone.go`
+
+**对官方文件的插桩（合并时重点看）**
+- `ent/schema/user.go` / `auth_identity.go`：`signup_source` / `provider_type` 增加 `phone`
+- 设置系统贯穿：`domain_constants.go`、`settings_view.go`、`setting_parse.go`、`setting_update.go`、`setting_public.go`、`dto/settings.go`、admin setting handler/update/audit、`api_contract_test.go` 两份 golden map
+- 身份汇总：`user_service.go` 的 `UserIdentitySummarySet.Phone`、`canUnbindProvider`、`normalizeUserIdentityProvider`
+- 路由：`POST /api/v1/auth/phone/send-code`、`POST /api/v1/auth/phone/login`、`POST /api/v1/user/account-bindings/phone`
+- 前端：登录页、资料绑定、后台「安全与认证」设置卡、中英 i18n
+
+**后台设置键**（默认关闭，不配短信则公开设置也不会打开入口）
+- `phone_login_enabled`
+- `phone_sms_aliyun_access_key_id` / `phone_sms_aliyun_access_key_secret`（密钥只回传 configured 标志）
+- `phone_sms_aliyun_sign_name` / `phone_sms_aliyun_template_code` / `phone_sms_aliyun_template_param_key`（默认 `code`）
+
+无新增 Go 依赖：阿里云短信走 HTTP RPC HMAC-SHA1，不引入 SDK。

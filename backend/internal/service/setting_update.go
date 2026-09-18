@@ -248,6 +248,15 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 		updates[SettingKeyLinuxDoConnectClientSecret] = settings.LinuxDoConnectClientSecret
 	}
 
+	updates[SettingKeyPhoneLoginEnabled] = strconv.FormatBool(settings.PhoneLoginEnabled)
+	updates[SettingKeyPhoneSMSAliyunAccessKeyID] = strings.TrimSpace(settings.PhoneSMSAliyunAccessKeyID)
+	if strings.TrimSpace(settings.PhoneSMSAliyunAccessKeySecret) != "" {
+		updates[SettingKeyPhoneSMSAliyunAccessKeySecret] = strings.TrimSpace(settings.PhoneSMSAliyunAccessKeySecret)
+	}
+	updates[SettingKeyPhoneSMSAliyunSignName] = strings.TrimSpace(settings.PhoneSMSAliyunSignName)
+	updates[SettingKeyPhoneSMSAliyunTemplateCode] = strings.TrimSpace(settings.PhoneSMSAliyunTemplateCode)
+	updates[SettingKeyPhoneSMSAliyunTemplateParamKey] = DefaultPhoneSMSTemplateParamKey(settings.PhoneSMSAliyunTemplateParamKey)
+
 	// DingTalk Connect OAuth 登录
 	updates[SettingKeyDingTalkConnectEnabled] = strconv.FormatBool(settings.DingTalkConnectEnabled)
 	updates[SettingKeyDingTalkConnectClientID] = settings.DingTalkConnectClientID

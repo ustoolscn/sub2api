@@ -523,6 +523,13 @@ export interface SystemSettings {
   linuxdo_connect_client_secret_configured: boolean;
   linuxdo_connect_redirect_url: string;
 
+  phone_login_enabled: boolean;
+  phone_sms_aliyun_access_key_id: string;
+  phone_sms_aliyun_access_key_secret_configured: boolean;
+  phone_sms_aliyun_sign_name: string;
+  phone_sms_aliyun_template_code: string;
+  phone_sms_aliyun_template_param_key: string;
+
   // DingTalk Connect OAuth settings
   dingtalk_connect_enabled: boolean;
   dingtalk_connect_client_id: string;
@@ -869,6 +876,12 @@ export interface UpdateSettingsRequest {
   linuxdo_connect_client_id?: string;
   linuxdo_connect_client_secret?: string;
   linuxdo_connect_redirect_url?: string;
+  phone_login_enabled?: boolean;
+  phone_sms_aliyun_access_key_id?: string;
+  phone_sms_aliyun_access_key_secret?: string;
+  phone_sms_aliyun_sign_name?: string;
+  phone_sms_aliyun_template_code?: string;
+  phone_sms_aliyun_template_param_key?: string;
   dingtalk_connect_enabled?: boolean;
   dingtalk_connect_client_id?: string;
   dingtalk_connect_client_secret?: string;

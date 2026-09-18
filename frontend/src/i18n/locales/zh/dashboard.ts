@@ -969,12 +969,14 @@ export default {
         bound: '已绑定',
         notBound: '未绑定',
       },
+      phonePlaceholder: '输入手机号',
       providers: {
         email: '邮箱',
         linuxdo: 'LinuxDo',
         dingtalk: '钉钉',
         oidc: '{providerName}',
         wechat: '微信',
+        phone: '手机号',
       },
       notes: {
         emailManagedFromProfile: '主邮箱在资料表单中管理',

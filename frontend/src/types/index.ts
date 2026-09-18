@@ -34,7 +34,7 @@ export interface NotifyEmailEntry {
 
 // ==================== User & Auth Types ====================
 
-export type UserAuthProvider = 'email' | 'linuxdo' | 'oidc' | 'wechat' | 'github' | 'google' | 'dingtalk'
+export type UserAuthProvider = 'email' | 'linuxdo' | 'oidc' | 'wechat' | 'github' | 'google' | 'dingtalk' | 'phone'
 
 export interface UserAuthBindingStatus {
   bound?: boolean
@@ -84,6 +84,7 @@ export interface User {
   linuxdo_bound?: boolean
   oidc_bound?: boolean
   wechat_bound?: boolean
+  phone_bound?: boolean
   role: 'admin' | 'user' // User role for authorization
   balance: number // User balance for API usage
   frozen_balance?: number // Balance currently held by async batch jobs
@@ -117,6 +118,24 @@ export interface AdminUser extends User {
 export interface LoginRequest {
   email: string
   password: string
+  turnstile_token?: string
+  tencent_captcha_ticket?: string
+  tencent_captcha_randstr?: string
+}
+
+export interface PhoneLoginRequest {
+  phone: string
+  code: string
+  invitation_code?: string
+  promo_code?: string
+  aff_code?: string
+  turnstile_token?: string
+  tencent_captcha_ticket?: string
+  tencent_captcha_randstr?: string
+}
+
+export interface PhoneSendCodeRequest {
+  phone: string
   turnstile_token?: string
   tencent_captcha_ticket?: string
   tencent_captcha_randstr?: string
@@ -248,6 +267,7 @@ export interface PublicSettings {
   custom_menu_items: CustomMenuItem[]
   custom_endpoints: CustomEndpoint[]
   linuxdo_oauth_enabled: boolean
+  phone_login_enabled?: boolean
   dingtalk_oauth_enabled?: boolean
   wechat_oauth_enabled: boolean
   wechat_oauth_open_enabled?: boolean

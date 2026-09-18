@@ -231,6 +231,7 @@ type UserIdentitySummarySet struct {
 	OIDC     UserIdentitySummary `json:"oidc"`
 	WeChat   UserIdentitySummary `json:"wechat"`
 	DingTalk UserIdentitySummary `json:"dingtalk"`
+	Phone    UserIdentitySummary `json:"phone"`
 }
 
 type StartUserIdentityBindingRequest struct {
@@ -351,6 +352,7 @@ func (s *UserService) GetProfileIdentitySummaries(ctx context.Context, userID in
 		OIDC:     s.buildProviderIdentitySummary("oidc", user, records),
 		WeChat:   s.buildProviderIdentitySummary("wechat", user, records),
 		DingTalk: s.buildProviderIdentitySummary("dingtalk", user, records),
+		Phone:    s.buildPhoneIdentitySummary(user, records),
 	}
 
 	s.applyExplicitProviderAvailability(ctx, &summaries)
@@ -371,6 +373,7 @@ func (s *UserService) applyExplicitProviderAvailability(ctx context.Context, sum
 		SettingKeyWeChatConnectMobileEnabled,
 		SettingKeyWeChatConnectMode,
 		SettingKeyDingTalkConnectEnabled,
+		SettingKeyPhoneLoginEnabled,
 	})
 	if err != nil {
 		return
@@ -381,6 +384,9 @@ func (s *UserService) applyExplicitProviderAvailability(ctx context.Context, sum
 	}
 	if raw, ok := settings[SettingKeyDingTalkConnectEnabled]; ok && strings.TrimSpace(raw) != "" && raw != "true" {
 		disableIdentityBindAction(&summaries.DingTalk)
+	}
+	if raw, ok := settings[SettingKeyPhoneLoginEnabled]; ok && strings.TrimSpace(raw) != "" && raw != "true" {
+		disableIdentityBindAction(&summaries.Phone)
 	}
 	if raw, ok := settings[SettingKeyOIDCConnectEnabled]; ok && strings.TrimSpace(raw) != "" && raw != "true" {
 		disableIdentityBindAction(&summaries.OIDC)
@@ -787,6 +793,38 @@ func (s *UserService) buildProviderIdentitySummary(provider string, user *User, 
 	return summary
 }
 
+func (s *UserService) buildPhoneIdentitySummary(user *User, records []UserAuthIdentityRecord) UserIdentitySummary {
+	summary := UserIdentitySummary{
+		Provider:  phoneAuthProviderType,
+		CanUnbind: false,
+	}
+	filtered := filterUserAuthIdentities(records, phoneAuthProviderType)
+	if len(filtered) == 0 {
+		summary.CanBind = true
+		return summary
+	}
+	primary := selectPrimaryUserAuthIdentity(filtered)
+	phone := strings.TrimSpace(firstStringIdentityValue(primary.Metadata, "phone"))
+	if phone == "" {
+		phone = strings.TrimSpace(primary.ProviderSubject)
+	}
+	summary.Bound = true
+	summary.BoundCount = len(filtered)
+	summary.DisplayName = MaskPhone(phone)
+	summary.SubjectHint = MaskPhone(phone)
+	summary.ProviderKey = strings.TrimSpace(primary.ProviderKey)
+	summary.VerifiedAt = primary.VerifiedAt
+	summary.CanUnbind = s.canUnbindProvider(phoneAuthProviderType, user, records)
+	if summary.CanUnbind {
+		summary.NoteKey = userIdentityNoteCanUnbind
+		summary.Note = "You can unbind this sign-in method."
+	} else {
+		summary.NoteKey = userIdentityNoteBindAnotherBeforeUnbind
+		summary.Note = "Bind another sign-in method before unbinding."
+	}
+	return summary
+}
+
 func (s *UserService) canUnbindProvider(provider string, user *User, records []UserAuthIdentityRecord) bool {
 	if provider == "" || provider == "email" || len(filterUserAuthIdentities(records, provider)) == 0 {
 		return false
@@ -796,7 +834,7 @@ func (s *UserService) canUnbindProvider(provider string, user *User, records []U
 		return true
 	}
 
-	for _, candidate := range []string{"linuxdo", "oidc", "wechat", "dingtalk"} {
+	for _, candidate := range []string{"linuxdo", "oidc", "wechat", "dingtalk", "phone"} {
 		if candidate == provider {
 			continue
 		}
@@ -896,6 +934,8 @@ func normalizeUserIdentityProvider(provider string) string {
 		return "dingtalk"
 	case "email":
 		return "email"
+	case "phone":
+		return "phone"
 	default:
 		return ""
 	}

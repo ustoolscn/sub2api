@@ -145,6 +145,57 @@
                   }}
                 </button>
               </div>
+
+              <div
+                v-if="item.provider === 'phone' && (isPhoneFormExpanded || item.canBind)"
+                data-testid="profile-binding-phone-form"
+                class="grid gap-2 sm:grid-cols-[minmax(0,1.4fr)_auto]"
+              >
+                <input
+                  v-model.trim="phoneBindingForm.phone"
+                  data-testid="profile-binding-phone-input"
+                  type="tel"
+                  class="input"
+                  :placeholder="t('profile.authBindings.phonePlaceholder')"
+                  :disabled="isSendingPhoneCode || isBindingPhone"
+                />
+                <button
+                  data-testid="profile-binding-phone-send-code"
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  :disabled="isSendingPhoneCode || isBindingPhone"
+                  @click="sendPhoneCode"
+                >
+                  {{
+                    isSendingPhoneCode
+                      ? t('common.loading')
+                      : t('profile.authBindings.sendCodeAction')
+                  }}
+                </button>
+                <input
+                  v-model.trim="phoneBindingForm.code"
+                  data-testid="profile-binding-phone-code-input"
+                  type="text"
+                  inputmode="numeric"
+                  maxlength="6"
+                  class="input"
+                  :placeholder="t('profile.authBindings.codePlaceholder')"
+                  :disabled="isBindingPhone"
+                />
+                <button
+                  data-testid="profile-binding-phone-submit"
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  :disabled="isBindingPhone"
+                  @click="bindPhone"
+                >
+                  {{
+                    isBindingPhone
+                      ? t('common.loading')
+                      : t('profile.authBindings.bindAction', { providerName: item.label })
+                  }}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -163,7 +214,7 @@
               }}
             </button>
             <button
-              v-if="item.canBind"
+              v-if="item.canBind && item.provider !== 'phone'"
               :data-testid="`profile-binding-${item.provider}-action`"
               type="button"
               class="btn btn-primary btn-sm"
@@ -203,7 +254,9 @@ import {
 } from '@/api/auth'
 import {
   bindEmailIdentity,
+  bindPhoneIdentity,
   sendEmailBindingCode,
+  sendPhoneBindingCode,
   startOAuthBinding,
   unbindAuthIdentity,
 } from '@/api/user'
@@ -217,6 +270,7 @@ const props = withDefaults(
   defineProps<{
     user: User | null
     linuxdoEnabled?: boolean
+    phoneEnabled?: boolean
     dingtalkEnabled?: boolean
     oidcEnabled?: boolean
     oidcProviderName?: string
@@ -228,6 +282,7 @@ const props = withDefaults(
   }>(),
   {
     linuxdoEnabled: false,
+    phoneEnabled: false,
     dingtalkEnabled: false,
     oidcEnabled: false,
     oidcProviderName: 'OIDC',
@@ -254,6 +309,13 @@ const emailBindingForm = reactive({
   verifyCode: '',
   password: '',
 })
+const phoneBindingForm = reactive({
+  phone: '',
+  code: '',
+})
+const isSendingPhoneCode = ref(false)
+const isBindingPhone = ref(false)
+const isPhoneFormExpanded = ref(false)
 
 watch(
   () => props.user,
@@ -408,6 +470,9 @@ function isProviderEnabledForBinding(provider: BindableProvider): boolean {
   if (provider === 'linuxdo') {
     return props.linuxdoEnabled
   }
+  if (provider === 'phone') {
+    return props.phoneEnabled
+  }
   if (provider === 'dingtalk') {
     return props.dingtalkEnabled
   }
@@ -470,9 +535,23 @@ const providerItems = computed(() => [
     canUnbind: Boolean(getBindingStatus('wechat') && getBindingDetails('wechat')?.can_unbind),
     details: getBindingDetails('wechat'),
   },
+  {
+    provider: 'phone' as const,
+    label: t('profile.authBindings.providers.phone'),
+    bound: getBindingStatus('phone'),
+    canBind:
+      !getBindingStatus('phone') &&
+      isProviderEnabledForBinding('phone') &&
+      (getBindingDetails('phone')?.can_bind ?? true),
+    canUnbind: Boolean(getBindingStatus('phone') && getBindingDetails('phone')?.can_unbind),
+    details: getBindingDetails('phone'),
+  },
 ])
 
 function providerInitial(provider: UserAuthProvider): string {
+  if (provider === 'phone') {
+    return 'P'
+  }
   if (provider === 'linuxdo') {
     return 'L'
   }
@@ -489,6 +568,9 @@ function providerInitial(provider: UserAuthProvider): string {
 }
 
 function providerIconClass(provider: UserAuthProvider): string {
+  if (provider === 'phone') {
+    return 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-300'
+  }
   if (provider === 'linuxdo') {
     return 'bg-orange-100 text-orange-600 dark:bg-orange-900/20 dark:text-orange-300'
   }
@@ -556,6 +638,10 @@ function startBinding(provider: UserAuthProvider): void {
   if (provider === 'email') {
     return
   }
+  if (provider === 'phone') {
+    isPhoneFormExpanded.value = true
+    return
+  }
   startOAuthBinding(provider, {
     redirectTo: route.fullPath || '/profile',
     wechatOAuthSettings: provider === 'wechat' ? wechatOAuthSettings.value : null,
@@ -565,6 +651,37 @@ function startBinding(provider: UserAuthProvider): void {
 function applyUpdatedUser(user: User): void {
   localUser.value = user
   authStore.user = user
+}
+
+async function sendPhoneCode(): Promise<void> {
+  isSendingPhoneCode.value = true
+  try {
+    await sendPhoneBindingCode(phoneBindingForm.phone)
+    appStore.showSuccess(t('auth.phoneCodeSentSuccess'))
+  } catch (error) {
+    appStore.showError((error as { message?: string }).message || t('auth.sendCodeFailed'))
+  } finally {
+    isSendingPhoneCode.value = false
+  }
+}
+
+async function bindPhone(): Promise<void> {
+  isBindingPhone.value = true
+  try {
+    const user = await bindPhoneIdentity({
+      phone: phoneBindingForm.phone,
+      code: phoneBindingForm.code,
+    })
+    applyUpdatedUser(user)
+    phoneBindingForm.phone = ''
+    phoneBindingForm.code = ''
+    isPhoneFormExpanded.value = false
+    appStore.showSuccess(t('profile.authBindings.bindSuccess'))
+  } catch (error) {
+    appStore.showError((error as { message?: string }).message || t('common.tryAgain'))
+  } finally {
+    isBindingPhone.value = false
+  }
 }
 
 async function handleUnbind(provider: BindableProvider, providerLabel: string): Promise<void> {

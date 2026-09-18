@@ -164,6 +164,24 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.LinuxDoConnectRedirectURL != after.LinuxDoConnectRedirectURL {
 		changed = append(changed, "linuxdo_connect_redirect_url")
 	}
+	if before.PhoneLoginEnabled != after.PhoneLoginEnabled {
+		changed = append(changed, "phone_login_enabled")
+	}
+	if before.PhoneSMSAliyunAccessKeyID != after.PhoneSMSAliyunAccessKeyID {
+		changed = append(changed, "phone_sms_aliyun_access_key_id")
+	}
+	if req.PhoneSMSAliyunAccessKeySecret != "" {
+		changed = append(changed, "phone_sms_aliyun_access_key_secret")
+	}
+	if before.PhoneSMSAliyunSignName != after.PhoneSMSAliyunSignName {
+		changed = append(changed, "phone_sms_aliyun_sign_name")
+	}
+	if before.PhoneSMSAliyunTemplateCode != after.PhoneSMSAliyunTemplateCode {
+		changed = append(changed, "phone_sms_aliyun_template_code")
+	}
+	if before.PhoneSMSAliyunTemplateParamKey != after.PhoneSMSAliyunTemplateParamKey {
+		changed = append(changed, "phone_sms_aliyun_template_param_key")
+	}
 	if before.DingTalkConnectEnabled != after.DingTalkConnectEnabled {
 		changed = append(changed, "dingtalk_connect_enabled")
 	}

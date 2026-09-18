@@ -2555,6 +2555,112 @@
             </div>
           </div>
 
+          <!-- 手机号登录 -->
+          <div class="card">
+            <div
+              class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
+            >
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ t("admin.settings.phoneLogin.title") }}
+              </h2>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {{ t("admin.settings.phoneLogin.description") }}
+              </p>
+            </div>
+            <div class="space-y-5 p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="font-medium text-gray-900 dark:text-white">{{
+                    t("admin.settings.phoneLogin.enable")
+                  }}</label>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ t("admin.settings.phoneLogin.enableHint") }}
+                  </p>
+                </div>
+                <Toggle v-model="form.phone_login_enabled" />
+              </div>
+
+              <div
+                v-if="form.phone_login_enabled"
+                class="border-t border-gray-100 pt-4 dark:border-dark-700"
+              >
+                <div class="grid grid-cols-1 gap-6">
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ t("admin.settings.phoneLogin.accessKeyId") }}
+                    </label>
+                    <input
+                      v-model="form.phone_sms_aliyun_access_key_id"
+                      type="text"
+                      class="input font-mono text-sm"
+                      :placeholder="t('admin.settings.phoneLogin.accessKeyIdPlaceholder')"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ t("admin.settings.phoneLogin.accessKeySecret") }}
+                    </label>
+                    <input
+                      v-model="form.phone_sms_aliyun_access_key_secret"
+                      type="password"
+                      class="input font-mono text-sm"
+                      :placeholder="t('admin.settings.phoneLogin.accessKeySecretPlaceholder')"
+                    />
+                    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      {{
+                        form.phone_sms_aliyun_access_key_secret_configured
+                          ? t("admin.settings.phoneLogin.accessKeySecretConfiguredHint")
+                          : t("admin.settings.phoneLogin.accessKeySecretHint")
+                      }}
+                    </p>
+                  </div>
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ t("admin.settings.phoneLogin.signName") }}
+                    </label>
+                    <input
+                      v-model="form.phone_sms_aliyun_sign_name"
+                      type="text"
+                      class="input"
+                      :placeholder="t('admin.settings.phoneLogin.signNamePlaceholder')"
+                    />
+                    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t("admin.settings.phoneLogin.signNameHint") }}
+                    </p>
+                  </div>
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ t("admin.settings.phoneLogin.templateCode") }}
+                    </label>
+                    <input
+                      v-model="form.phone_sms_aliyun_template_code"
+                      type="text"
+                      class="input font-mono text-sm"
+                      :placeholder="t('admin.settings.phoneLogin.templateCodePlaceholder')"
+                    />
+                    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t("admin.settings.phoneLogin.templateCodeHint") }}
+                    </p>
+                  </div>
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ t("admin.settings.phoneLogin.templateParamKey") }}
+                    </label>
+                    <input
+                      v-model="form.phone_sms_aliyun_template_param_key"
+                      type="text"
+                      class="input font-mono text-sm"
+                      :placeholder="t('admin.settings.phoneLogin.templateParamKeyPlaceholder')"
+                    />
+                    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t("admin.settings.phoneLogin.templateParamKeyHint") }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- GitHub / Google 邮箱快捷登录 -->
           <div class="card">
             <div
@@ -9693,6 +9799,7 @@ type SettingsForm = Omit<
   tencent_captcha_cloud_secret_key: string;
   aliyun_captcha_access_key_secret: string;
   linuxdo_connect_client_secret: string;
+  phone_sms_aliyun_access_key_secret: string;
   dingtalk_connect_client_secret: string;
   wechat_connect_app_secret: string;
   wechat_connect_open_app_secret: string;
@@ -9851,6 +9958,13 @@ const form = reactive<SettingsForm>({
   linuxdo_connect_client_secret: "",
   linuxdo_connect_client_secret_configured: false,
   linuxdo_connect_redirect_url: "",
+  phone_login_enabled: false,
+  phone_sms_aliyun_access_key_id: "",
+  phone_sms_aliyun_access_key_secret: "",
+  phone_sms_aliyun_access_key_secret_configured: false,
+  phone_sms_aliyun_sign_name: "",
+  phone_sms_aliyun_template_code: "",
+  phone_sms_aliyun_template_param_key: "code",
   // DingTalk Connect OAuth 登录
   dingtalk_connect_enabled: false,
   dingtalk_connect_client_id: "",
@@ -11473,6 +11587,14 @@ async function saveSettings() {
       linuxdo_connect_client_secret:
         form.linuxdo_connect_client_secret || undefined,
       linuxdo_connect_redirect_url: form.linuxdo_connect_redirect_url,
+      phone_login_enabled: form.phone_login_enabled,
+      phone_sms_aliyun_access_key_id: form.phone_sms_aliyun_access_key_id,
+      phone_sms_aliyun_access_key_secret:
+        form.phone_sms_aliyun_access_key_secret || undefined,
+      phone_sms_aliyun_sign_name: form.phone_sms_aliyun_sign_name,
+      phone_sms_aliyun_template_code: form.phone_sms_aliyun_template_code,
+      phone_sms_aliyun_template_param_key:
+        form.phone_sms_aliyun_template_param_key || "code",
       dingtalk_connect_enabled: form.dingtalk_connect_enabled,
       dingtalk_connect_client_id: form.dingtalk_connect_client_id,
       dingtalk_connect_client_secret:

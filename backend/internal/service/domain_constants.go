@@ -218,6 +218,9 @@ const WeChatConnectSyntheticEmailDomain = "@wechat-connect.invalid"
 // DingTalkConnectSyntheticEmailDomain 是 DingTalk Connect 用户的合成邮箱后缀（RFC 保留域名）。
 const DingTalkConnectSyntheticEmailDomain = "@dingtalk-connect.invalid"
 
+// PhoneConnectSyntheticEmailDomain 是手机号登录用户的合成邮箱后缀（RFC 保留域名）。
+const PhoneConnectSyntheticEmailDomain = "@phone.invalid"
+
 // Setting keys
 const (
 	// 注册设置
@@ -302,6 +305,14 @@ const (
 	SettingKeyLinuxDoConnectClientID     = "linuxdo_connect_client_id"
 	SettingKeyLinuxDoConnectClientSecret = "linuxdo_connect_client_secret"
 	SettingKeyLinuxDoConnectRedirectURL  = "linuxdo_connect_redirect_url"
+
+	// 手机号登录（阿里云短信验证码）
+	SettingKeyPhoneLoginEnabled                 = "phone_login_enabled"
+	SettingKeyPhoneSMSAliyunAccessKeyID         = "phone_sms_aliyun_access_key_id"
+	SettingKeyPhoneSMSAliyunAccessKeySecret     = "phone_sms_aliyun_access_key_secret"
+	SettingKeyPhoneSMSAliyunSignName            = "phone_sms_aliyun_sign_name"
+	SettingKeyPhoneSMSAliyunTemplateCode        = "phone_sms_aliyun_template_code"
+	SettingKeyPhoneSMSAliyunTemplateParamKey    = "phone_sms_aliyun_template_param_key"
 
 	// DingTalk Connect OAuth 登录设置
 	SettingKeyDingTalkConnectEnabled                 = "dingtalk_connect_enabled"

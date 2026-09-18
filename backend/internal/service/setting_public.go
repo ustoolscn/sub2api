@@ -196,6 +196,11 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyCustomMenuItems,
 		SettingKeyCustomEndpoints,
 		SettingKeyLinuxDoConnectEnabled,
+		SettingKeyPhoneLoginEnabled,
+		SettingKeyPhoneSMSAliyunAccessKeyID,
+		SettingKeyPhoneSMSAliyunAccessKeySecret,
+		SettingKeyPhoneSMSAliyunSignName,
+		SettingKeyPhoneSMSAliyunTemplateCode,
 		SettingKeyDingTalkConnectEnabled,
 		SettingKeyWeChatConnectEnabled,
 		SettingKeyWeChatConnectAppID,
@@ -277,6 +282,11 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 	gitHubEnabled := s.emailOAuthPublicEnabled(settings, "github")
 	googleEnabled := s.emailOAuthPublicEnabled(settings, "google")
 	weChatEnabled, weChatOpenEnabled, weChatMPEnabled, weChatMobileEnabled := s.weChatOAuthCapabilitiesFromSettings(settings)
+	phoneLoginEnabled := settings[SettingKeyPhoneLoginEnabled] == "true" &&
+		strings.TrimSpace(settings[SettingKeyPhoneSMSAliyunAccessKeyID]) != "" &&
+		strings.TrimSpace(settings[SettingKeyPhoneSMSAliyunAccessKeySecret]) != "" &&
+		strings.TrimSpace(settings[SettingKeyPhoneSMSAliyunSignName]) != "" &&
+		strings.TrimSpace(settings[SettingKeyPhoneSMSAliyunTemplateCode]) != ""
 
 	// Password reset requires email verification to be enabled
 	emailVerifyEnabled := settings[SettingKeyEmailVerifyEnabled] == "true"
@@ -340,6 +350,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		CustomMenuItems:                     settings[SettingKeyCustomMenuItems],
 		CustomEndpoints:                     settings[SettingKeyCustomEndpoints],
 		LinuxDoOAuthEnabled:                 linuxDoEnabled,
+		PhoneLoginEnabled:                   phoneLoginEnabled,
 		DingTalkOAuthEnabled:                dingTalkEnabled,
 		WeChatOAuthEnabled:                  weChatEnabled,
 		WeChatOAuthOpenEnabled:              weChatOpenEnabled,
@@ -599,6 +610,7 @@ type PublicSettingsInjectionPayload struct {
 	CustomMenuItems                     json.RawMessage          `json:"custom_menu_items"`
 	CustomEndpoints                     json.RawMessage          `json:"custom_endpoints"`
 	LinuxDoOAuthEnabled                 bool                     `json:"linuxdo_oauth_enabled"`
+	PhoneLoginEnabled                   bool                     `json:"phone_login_enabled"`
 	DingTalkOAuthEnabled                bool                     `json:"dingtalk_oauth_enabled"`
 	WeChatOAuthEnabled                  bool                     `json:"wechat_oauth_enabled"`
 	WeChatOAuthOpenEnabled              bool                     `json:"wechat_oauth_open_enabled"`
@@ -693,6 +705,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		CustomMenuItems:                     filterUserVisibleMenuItems(settings.CustomMenuItems),
 		CustomEndpoints:                     safeRawJSONArray(settings.CustomEndpoints),
 		LinuxDoOAuthEnabled:                 settings.LinuxDoOAuthEnabled,
+		PhoneLoginEnabled:                   settings.PhoneLoginEnabled,
 		DingTalkOAuthEnabled:                settings.DingTalkOAuthEnabled,
 		WeChatOAuthEnabled:                  settings.WeChatOAuthEnabled,
 		WeChatOAuthOpenEnabled:              settings.WeChatOAuthOpenEnabled,

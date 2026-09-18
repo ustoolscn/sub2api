@@ -86,6 +86,7 @@ type AuthService struct {
 	affiliateService      *AffiliateService
 	defaultSubAssigner    DefaultSubscriptionAssigner
 	userPlatformQuotaRepo UserPlatformQuotaRepository
+	phoneSMSSender        PhoneSMSSender
 }
 
 type CaptchaProof struct {
@@ -1187,6 +1188,8 @@ func inferLegacySignupSource(email string) string {
 		return "oidc"
 	case strings.HasSuffix(normalized, WeChatConnectSyntheticEmailDomain):
 		return "wechat"
+	case strings.HasSuffix(normalized, PhoneConnectSyntheticEmailDomain):
+		return "phone"
 	default:
 		return "email"
 	}
@@ -1402,7 +1405,8 @@ func isReservedEmail(email string) bool {
 	return strings.HasSuffix(normalized, LinuxDoConnectSyntheticEmailDomain) ||
 		strings.HasSuffix(normalized, OIDCConnectSyntheticEmailDomain) ||
 		strings.HasSuffix(normalized, WeChatConnectSyntheticEmailDomain) ||
-		strings.HasSuffix(normalized, DingTalkConnectSyntheticEmailDomain)
+		strings.HasSuffix(normalized, DingTalkConnectSyntheticEmailDomain) ||
+		strings.HasSuffix(normalized, PhoneConnectSyntheticEmailDomain)
 }
 
 // GenerateToken 生成JWT access token

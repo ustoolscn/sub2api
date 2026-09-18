@@ -8,6 +8,8 @@ import { refreshAuthTokens, type RefreshTokenResponse } from './tokenRefresh'
 export type { RefreshTokenResponse } from './tokenRefresh'
 import type {
   LoginRequest,
+  PhoneLoginRequest,
+  PhoneSendCodeRequest,
   RegisterRequest,
   AuthResponse,
   CurrentUserResponse,
@@ -143,6 +145,32 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
     localStorage.setItem('auth_user', JSON.stringify(data.user))
   }
 
+  return data
+}
+
+function persistAuthResponse(data: AuthResponse): void {
+  setAuthToken(data.access_token)
+  if (data.refresh_token) {
+    setRefreshToken(data.refresh_token)
+  }
+  if (data.expires_in) {
+    setTokenExpiresAt(data.expires_in)
+  }
+  localStorage.setItem('auth_user', JSON.stringify(data.user))
+}
+
+export async function sendPhoneVerifyCode(
+  request: PhoneSendCodeRequest
+): Promise<SendVerifyCodeResponse> {
+  const { data } = await apiClient.post<SendVerifyCodeResponse>('/auth/phone/send-code', request)
+  return data
+}
+
+export async function phoneLogin(credentials: PhoneLoginRequest): Promise<LoginResponse> {
+  const { data } = await apiClient.post<LoginResponse>('/auth/phone/login', credentials)
+  if (!isTotp2FARequired(data)) {
+    persistAuthResponse(data)
+  }
   return data
 }
 
@@ -680,6 +708,8 @@ export async function exchangePendingOAuthCompletion(
 
 export const authAPI = {
   login,
+  phoneLogin,
+  sendPhoneVerifyCode,
   login2FA,
   isTotp2FARequired,
   register,

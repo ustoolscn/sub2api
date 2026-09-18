@@ -110,6 +110,19 @@ export async function bindEmailIdentity(payload: {
   return data
 }
 
+export async function sendPhoneBindingCode(phone: string): Promise<{ countdown?: number }> {
+  const { data } = await apiClient.post<{ countdown?: number }>('/user/account-bindings/phone/send-code', { phone })
+  return data
+}
+
+export async function bindPhoneIdentity(payload: {
+  phone: string
+  code: string
+}): Promise<User> {
+  const { data } = await apiClient.post<User>('/user/account-bindings/phone', payload)
+  return data
+}
+
 export async function unbindAuthIdentity(provider: BindableOAuthProvider): Promise<User> {
   const { data } = await apiClient.delete<User>(`/user/account-bindings/${provider}`)
   return data

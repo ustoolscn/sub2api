@@ -70,6 +70,7 @@ func TestAPIContracts(t *testing.T) {
 					"oidc_bound": false,
 					"wechat_bound": false,
 					"dingtalk_bound": false,
+					"phone_bound": false,
 					"identities": {
 						"email": {
 							"provider": "email",
@@ -114,6 +115,13 @@ func TestAPIContracts(t *testing.T) {
 							"can_bind": true,
 							"can_unbind": false,
 							"bind_start_path": "/api/v1/auth/oauth/dingtalk/bind/start?intent=bind_current_user&redirect=%2Fsettings%2Fprofile"
+						},
+						"phone": {
+							"provider": "phone",
+							"bound": false,
+							"bound_count": 0,
+							"can_bind": true,
+							"can_unbind": false
 						}
 					},
 					"identity_bindings": {
@@ -160,6 +168,13 @@ func TestAPIContracts(t *testing.T) {
 							"can_bind": true,
 							"can_unbind": false,
 							"bind_start_path": "/api/v1/auth/oauth/dingtalk/bind/start?intent=bind_current_user&redirect=%2Fsettings%2Fprofile"
+						},
+						"phone": {
+							"provider": "phone",
+							"bound": false,
+							"bound_count": 0,
+							"can_bind": true,
+							"can_unbind": false
 						}
 					},
 					"auth_bindings": {
@@ -206,6 +221,13 @@ func TestAPIContracts(t *testing.T) {
 							"can_bind": true,
 							"can_unbind": false,
 							"bind_start_path": "/api/v1/auth/oauth/dingtalk/bind/start?intent=bind_current_user&redirect=%2Fsettings%2Fprofile"
+						},
+						"phone": {
+							"provider": "phone",
+							"bound": false,
+							"bound_count": 0,
+							"can_bind": true,
+							"can_unbind": false
 						}
 					},
 					"run_mode": "standard"
@@ -765,6 +787,12 @@ func TestAPIContracts(t *testing.T) {
 						"linuxdo_connect_client_id": "",
 						"linuxdo_connect_client_secret_configured": false,
 						"linuxdo_connect_redirect_url": "",
+						"phone_login_enabled": false,
+						"phone_sms_aliyun_access_key_id": "",
+						"phone_sms_aliyun_access_key_secret_configured": false,
+						"phone_sms_aliyun_sign_name": "",
+						"phone_sms_aliyun_template_code": "",
+						"phone_sms_aliyun_template_param_key": "code",
 						"dingtalk_connect_enabled": false,
 						"dingtalk_connect_bypass_registration": false,
 						"dingtalk_connect_client_id": "",
@@ -1124,6 +1152,12 @@ func TestAPIContracts(t *testing.T) {
 					"linuxdo_connect_client_id": "",
 					"linuxdo_connect_client_secret_configured": false,
 					"linuxdo_connect_redirect_url": "",
+					"phone_login_enabled": false,
+					"phone_sms_aliyun_access_key_id": "",
+					"phone_sms_aliyun_access_key_secret_configured": false,
+					"phone_sms_aliyun_sign_name": "",
+					"phone_sms_aliyun_template_code": "",
+					"phone_sms_aliyun_template_param_key": "code",
 					"dingtalk_connect_enabled": false,
 					"dingtalk_connect_bypass_registration": false,
 					"dingtalk_connect_client_id": "",

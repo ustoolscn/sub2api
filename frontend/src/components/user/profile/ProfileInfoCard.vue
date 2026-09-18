@@ -139,6 +139,7 @@
           <ProfileIdentityBindingsSection
             :user="user"
             :linuxdo-enabled="linuxdoEnabled"
+            :phone-enabled="phoneEnabled"
             :dingtalk-enabled="dingtalkEnabled"
             :oidc-enabled="oidcEnabled"
             :oidc-provider-name="oidcProviderName"
@@ -191,6 +192,7 @@ import type { User, UserAuthBindingStatus, UserAuthProvider, UserProfileSourceCo
 const props = withDefaults(defineProps<{
   user: User | null
   linuxdoEnabled?: boolean
+  phoneEnabled?: boolean
   dingtalkEnabled?: boolean
   oidcEnabled?: boolean
   oidcProviderName?: string
@@ -199,6 +201,7 @@ const props = withDefaults(defineProps<{
   wechatMpEnabled?: boolean
 }>(), {
   linuxdoEnabled: false,
+  phoneEnabled: false,
   dingtalkEnabled: false,
   oidcEnabled: false,
   oidcProviderName: 'OIDC',
@@ -265,6 +268,7 @@ const memberSinceLabel = computed(() => {
 const providerLabels = computed<Record<UserAuthProvider, string>>(() => ({
   email: t('profile.authBindings.providers.email'),
   linuxdo: t('profile.authBindings.providers.linuxdo'),
+  phone: t('profile.authBindings.providers.phone'),
   dingtalk: t('profile.authBindings.providers.dingtalk'),
   oidc: t('profile.authBindings.providers.oidc', { providerName: props.oidcProviderName }),
   wechat: t('profile.authBindings.providers.wechat'),
@@ -283,7 +287,9 @@ function normalizeProvider(value: string): UserAuthProvider | null {
     normalized === 'linuxdo' ||
     normalized === 'wechat' ||
     normalized === 'github' ||
-    normalized === 'google'
+    normalized === 'google' ||
+    normalized === 'dingtalk' ||
+    normalized === 'phone'
   ) {
     return normalized
   }

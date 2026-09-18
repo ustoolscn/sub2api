@@ -81,6 +81,13 @@ type UpdateSettingsRequest struct {
 	LinuxDoConnectClientSecret string `json:"linuxdo_connect_client_secret"`
 	LinuxDoConnectRedirectURL  string `json:"linuxdo_connect_redirect_url"`
 
+	PhoneLoginEnabled              bool   `json:"phone_login_enabled"`
+	PhoneSMSAliyunAccessKeyID      string `json:"phone_sms_aliyun_access_key_id"`
+	PhoneSMSAliyunAccessKeySecret  string `json:"phone_sms_aliyun_access_key_secret"`
+	PhoneSMSAliyunSignName         string `json:"phone_sms_aliyun_sign_name"`
+	PhoneSMSAliyunTemplateCode     string `json:"phone_sms_aliyun_template_code"`
+	PhoneSMSAliyunTemplateParamKey string `json:"phone_sms_aliyun_template_param_key"`
+
 	// DingTalk Connect OAuth 登录
 	DingTalkConnectEnabled                 bool   `json:"dingtalk_connect_enabled"`
 	DingTalkConnectClientID                string `json:"dingtalk_connect_client_id"`
@@ -864,6 +871,38 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		}
 	}
 
+	if req.PhoneLoginEnabled {
+		req.PhoneSMSAliyunAccessKeyID = strings.TrimSpace(req.PhoneSMSAliyunAccessKeyID)
+		req.PhoneSMSAliyunAccessKeySecret = strings.TrimSpace(req.PhoneSMSAliyunAccessKeySecret)
+		req.PhoneSMSAliyunSignName = strings.TrimSpace(req.PhoneSMSAliyunSignName)
+		req.PhoneSMSAliyunTemplateCode = strings.TrimSpace(req.PhoneSMSAliyunTemplateCode)
+		req.PhoneSMSAliyunTemplateParamKey = service.DefaultPhoneSMSTemplateParamKey(req.PhoneSMSAliyunTemplateParamKey)
+		if req.PhoneSMSAliyunAccessKeyID == "" {
+			response.BadRequest(c, "Aliyun SMS AccessKey ID is required when phone login is enabled")
+			return
+		}
+		if req.PhoneSMSAliyunSignName == "" {
+			response.BadRequest(c, "Aliyun SMS sign name is required when phone login is enabled")
+			return
+		}
+		if req.PhoneSMSAliyunTemplateCode == "" {
+			response.BadRequest(c, "Aliyun SMS template code is required when phone login is enabled")
+			return
+		}
+		if req.PhoneSMSAliyunAccessKeySecret == "" {
+			if previousSettings.PhoneSMSAliyunAccessKeySecret == "" {
+				response.BadRequest(c, "Aliyun SMS AccessKey Secret is required when phone login is enabled")
+				return
+			}
+			req.PhoneSMSAliyunAccessKeySecret = previousSettings.PhoneSMSAliyunAccessKeySecret
+		}
+	} else {
+		req.PhoneSMSAliyunTemplateParamKey = service.DefaultPhoneSMSTemplateParamKey(req.PhoneSMSAliyunTemplateParamKey)
+		if strings.TrimSpace(req.PhoneSMSAliyunAccessKeySecret) == "" {
+			req.PhoneSMSAliyunAccessKeySecret = previousSettings.PhoneSMSAliyunAccessKeySecret
+		}
+	}
+
 	// DingTalk Connect 参数验证
 	// 防御性：任何写入路径上把已废弃的 corp_restriction_policy=whitelist 入参 coerce 为 none，
 	// 避免任何直连 admin API 的客户端把死值写回 DB（前端 UI 已无此选项）。
@@ -1559,6 +1598,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		LinuxDoConnectClientID:                 req.LinuxDoConnectClientID,
 		LinuxDoConnectClientSecret:             req.LinuxDoConnectClientSecret,
 		LinuxDoConnectRedirectURL:              req.LinuxDoConnectRedirectURL,
+		PhoneLoginEnabled:                      req.PhoneLoginEnabled,
+		PhoneSMSAliyunAccessKeyID:              req.PhoneSMSAliyunAccessKeyID,
+		PhoneSMSAliyunAccessKeySecret:          req.PhoneSMSAliyunAccessKeySecret,
+		PhoneSMSAliyunSignName:                 req.PhoneSMSAliyunSignName,
+		PhoneSMSAliyunTemplateCode:             req.PhoneSMSAliyunTemplateCode,
+		PhoneSMSAliyunTemplateParamKey:         req.PhoneSMSAliyunTemplateParamKey,
 		DingTalkConnectEnabled:                 req.DingTalkConnectEnabled,
 		DingTalkConnectClientID:                req.DingTalkConnectClientID,
 		DingTalkConnectClientSecret:            req.DingTalkConnectClientSecret,
@@ -2236,6 +2281,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		LinuxDoConnectClientID:                                 updatedSettings.LinuxDoConnectClientID,
 		LinuxDoConnectClientSecretConfigured:                   updatedSettings.LinuxDoConnectClientSecretConfigured,
 		LinuxDoConnectRedirectURL:                              updatedSettings.LinuxDoConnectRedirectURL,
+		PhoneLoginEnabled:                                      updatedSettings.PhoneLoginEnabled,
+		PhoneSMSAliyunAccessKeyID:                              updatedSettings.PhoneSMSAliyunAccessKeyID,
+		PhoneSMSAliyunAccessKeySecretConfigured:                updatedSettings.PhoneSMSAliyunAccessKeySecretConfigured,
+		PhoneSMSAliyunSignName:                                 updatedSettings.PhoneSMSAliyunSignName,
+		PhoneSMSAliyunTemplateCode:                             updatedSettings.PhoneSMSAliyunTemplateCode,
+		PhoneSMSAliyunTemplateParamKey:                         updatedSettings.PhoneSMSAliyunTemplateParamKey,
 		DingTalkConnectEnabled:                                 updatedSettings.DingTalkConnectEnabled,
 		DingTalkConnectClientID:                                updatedSettings.DingTalkConnectClientID,
 		DingTalkConnectClientSecretConfigured:                  updatedSettings.DingTalkConnectClientSecretConfigured,

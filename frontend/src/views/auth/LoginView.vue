@@ -10,10 +10,36 @@
           {{ t('auth.signInToAccount') }}
         </p>
       </div>
+      <div
+        v-if="phoneLoginEnabled"
+        class="grid grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1 dark:bg-dark-800"
+      >
+        <button
+          type="button"
+          class="rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+          :class="loginMode === 'email'
+            ? 'bg-white text-gray-900 shadow-sm dark:bg-dark-700 dark:text-white'
+            : 'text-gray-500 hover:text-gray-800 dark:text-dark-400 dark:hover:text-dark-200'"
+          @click="loginMode = 'email'"
+        >
+          {{ t('auth.emailLabel') }}
+        </button>
+        <button
+          type="button"
+          class="rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+          :class="loginMode === 'phone'
+            ? 'bg-white text-gray-900 shadow-sm dark:bg-dark-700 dark:text-white'
+            : 'text-gray-500 hover:text-gray-800 dark:text-dark-400 dark:hover:text-dark-200'"
+          @click="loginMode = 'phone'"
+        >
+          {{ t('auth.phoneLabel') }}
+        </button>
+      </div>
+
       <!-- Login Form -->
-      <form @submit.prevent="handleLogin" class="space-y-5">
+      <form @submit.prevent="loginMode === 'phone' ? handlePhoneLogin() : handleLogin()" class="space-y-5">
         <!-- Email Input -->
-        <div>
+        <div v-if="loginMode === 'email'">
           <label for="email" class="input-label">
             {{ t('auth.emailLabel') }}
           </label>
@@ -37,7 +63,7 @@
         </div>
 
         <!-- Password Input -->
-        <div>
+        <div v-if="loginMode === 'email'">
           <label for="password" class="input-label">
             {{ t('auth.passwordLabel') }}
           </label>
@@ -75,6 +101,74 @@
             >
               {{ t('auth.forgotPassword') }}
             </router-link>
+          </div>
+        </div>
+
+        <div v-if="loginMode === 'phone'" class="space-y-5">
+          <div>
+            <label for="phone" class="input-label">
+              {{ t('auth.phoneLabel') }}
+            </label>
+            <input
+              id="phone"
+              v-model="phoneForm.phone"
+              type="tel"
+              inputmode="numeric"
+              autocomplete="tel"
+              :disabled="authActionDisabled"
+              class="input"
+              :class="{ 'input-error': errors.phone }"
+              :placeholder="t('auth.phonePlaceholder')"
+            />
+          </div>
+          <div>
+            <label for="phone-code" class="input-label">
+              {{ t('auth.verificationCode') }}
+            </label>
+            <div class="flex gap-2">
+              <input
+                id="phone-code"
+                v-model="phoneForm.code"
+                type="text"
+                inputmode="numeric"
+                maxlength="6"
+                autocomplete="one-time-code"
+                :disabled="authActionDisabled"
+                class="input flex-1"
+                :class="{ 'input-error': errors.phoneCode }"
+                :placeholder="t('auth.phoneCodePlaceholder')"
+              />
+              <button
+                type="button"
+                class="btn btn-secondary whitespace-nowrap"
+                :disabled="authActionDisabled || phoneCountdown > 0"
+                @click="handleSendPhoneCode"
+              >
+                {{
+                  phoneCountdown > 0
+                    ? t('auth.resendCountdown', { countdown: phoneCountdown })
+                    : sendingPhoneCode
+                      ? t('auth.sendingCode')
+                      : t('auth.sendCode')
+                }}
+              </button>
+            </div>
+          </div>
+          <div v-if="invitationCodeEnabled">
+            <label for="phone-invitation" class="input-label">
+              {{ t('auth.invitationCodeLabel') }}
+            </label>
+            <input
+              id="phone-invitation"
+              v-model="phoneForm.invitationCode"
+              type="text"
+              :disabled="authActionDisabled"
+              class="input"
+              :placeholder="t('auth.invitationCodePlaceholder')"
+            />
+            <p class="mt-1 text-xs text-gray-500 dark:text-dark-400">
+              {{ t('auth.phoneInvitationHint') }}
+            </p>
           </div>
         </div>
 
@@ -241,6 +335,7 @@ import {
   getPublicSettings,
   isTotp2FARequired,
   isWeChatWebOAuthEnabled,
+  sendPhoneVerifyCode,
   startOAuthLogin,
   type OAuthLoginStart
 } from '@/api/auth'
@@ -281,6 +376,9 @@ const aliyunCaptchaSceneId = ref<string>('')
 const aliyunCaptchaPrefix = ref<string>('')
 const aliyunCaptchaRegion = ref<string>('cn')
 const linuxdoOAuthEnabled = ref<boolean>(false)
+const phoneLoginEnabled = ref<boolean>(false)
+const invitationCodeEnabled = ref<boolean>(false)
+const loginMode = ref<'email' | 'phone'>('email')
 const dingtalkOAuthEnabled = ref<boolean>(false)
 const wechatOAuthEnabled = ref<boolean>(false)
 const backendModeEnabled = ref<boolean>(false)
@@ -330,14 +428,25 @@ const formData = reactive({
   password: ''
 })
 
+const phoneForm = reactive({
+  phone: '',
+  code: '',
+  invitationCode: ''
+})
+const sendingPhoneCode = ref(false)
+const phoneCountdown = ref(0)
+let phoneCountdownTimer: ReturnType<typeof setInterval> | null = null
+
 const errors = reactive({
   email: '',
   password: '',
+  phone: '',
+  phoneCode: '',
   turnstile: ''
 })
 
 const validationToastMessage = computed(
-  () => errors.email || errors.password || errors.turnstile || ''
+  () => errors.email || errors.password || errors.phone || errors.phoneCode || errors.turnstile || ''
 )
 
 const agreementGateActive = computed(
@@ -393,6 +502,8 @@ onMounted(async () => {
     aliyunCaptchaPrefix.value = settings.aliyun_captcha_prefix || ''
     aliyunCaptchaRegion.value = settings.aliyun_captcha_region || 'cn'
     linuxdoOAuthEnabled.value = settings.linuxdo_oauth_enabled
+    phoneLoginEnabled.value = settings.phone_login_enabled === true
+    invitationCodeEnabled.value = settings.invitation_code_enabled === true
     dingtalkOAuthEnabled.value = settings.dingtalk_oauth_enabled ?? false
     wechatOAuthEnabled.value = isWeChatWebOAuthEnabled(settings)
     backendModeEnabled.value = settings.backend_mode_enabled
@@ -609,6 +720,116 @@ async function handleLogin(): Promise<void> {
     errorMessage.value = extractI18nErrorMessage(error, t, 'auth.errors', t('auth.loginFailed'))
 
     // Also show error toast
+    appStore.showError(errorMessage.value)
+  } finally {
+    if (captchaEnabled.value) {
+      resetCaptchaProof()
+    }
+    isLoading.value = false
+  }
+}
+
+function startPhoneCountdown(seconds: number): void {
+  phoneCountdown.value = Math.max(0, seconds)
+  if (phoneCountdownTimer) {
+    clearInterval(phoneCountdownTimer)
+  }
+  phoneCountdownTimer = setInterval(() => {
+    phoneCountdown.value -= 1
+    if (phoneCountdown.value <= 0 && phoneCountdownTimer) {
+      clearInterval(phoneCountdownTimer)
+      phoneCountdownTimer = null
+    }
+  }, 1000)
+}
+
+function captchaPayload() {
+  return {
+    turnstile_token:
+      turnstileEnabled.value || aliyunCaptchaEnabled.value ? turnstileToken.value : undefined,
+    tencent_captcha_ticket: tencentCaptchaEnabled.value ? turnstileToken.value : undefined,
+    tencent_captcha_randstr: tencentCaptchaEnabled.value
+      ? tencentCaptchaRandstr.value
+      : undefined
+  }
+}
+
+async function handleSendPhoneCode(): Promise<void> {
+  errors.phone = ''
+  if (!phoneForm.phone.trim()) {
+    errors.phone = t('auth.phoneRequired')
+    return
+  }
+  if (!(await acquireActionProof())) {
+    return
+  }
+  sendingPhoneCode.value = true
+  try {
+    const result = await sendPhoneVerifyCode({
+      phone: phoneForm.phone.trim(),
+      ...captchaPayload()
+    })
+    startPhoneCountdown(result.countdown || 60)
+    appStore.showSuccess(t('auth.phoneCodeSentSuccess'))
+  } catch (error: unknown) {
+    errorMessage.value = extractI18nErrorMessage(error, t, 'auth.errors', t('auth.sendCodeFailed'))
+    appStore.showError(errorMessage.value)
+  } finally {
+    if (captchaEnabled.value) {
+      resetCaptchaProof()
+    }
+    sendingPhoneCode.value = false
+  }
+}
+
+async function handlePhoneLogin(): Promise<void> {
+  errorMessage.value = ''
+  errors.phone = ''
+  errors.phoneCode = ''
+  if (agreementGateActive.value) {
+    appStore.showWarning(t('legal.loginAgreementPrompt.loginRequiredWarning'))
+    if (loginAgreementMode.value !== 'checkbox') {
+      showAgreementModal.value = true
+    }
+    return
+  }
+  if (!phoneForm.phone.trim()) {
+    errors.phone = t('auth.phoneRequired')
+    return
+  }
+  if (!/^\d{6}$/.test(phoneForm.code.trim())) {
+    errors.phoneCode = t('auth.invalidCode')
+    return
+  }
+  if (turnstileEnabled.value && !turnstileToken.value) {
+    errors.turnstile = t('auth.completeVerification')
+    return
+  }
+  if (!(await acquireActionProof())) {
+    return
+  }
+  isLoading.value = true
+  try {
+    const response = await authStore.loginWithPhone({
+      phone: phoneForm.phone.trim(),
+      code: phoneForm.code.trim(),
+      invitation_code: phoneForm.invitationCode.trim() || undefined,
+      ...captchaPayload()
+    })
+    if (isTotp2FARequired(response)) {
+      const totpResponse = response as TotpLoginResponse
+      totpTempToken.value = totpResponse.temp_token || ''
+      totpUserEmailMasked.value = totpResponse.user_email_masked || ''
+      show2FAModal.value = true
+      isLoading.value = false
+      return
+    }
+    clearAllAffiliateReferralCodes()
+    appStore.showSuccess(t('auth.loginSuccess'))
+    const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
+    await router.push(redirectTo)
+  } catch (error: unknown) {
+    errorMessage.value = extractI18nErrorMessage(error, t, 'auth.errors', t('auth.loginFailed'))
     appStore.showError(errorMessage.value)
   } finally {
     if (captchaEnabled.value) {
