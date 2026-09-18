@@ -721,6 +721,12 @@ const (
 	// SettingKeyOpenAICodexAccountPersonaEnabled 是否为每个 OAuth 凭据分配稳定的 UA persona
 	// （按凭据确定性派生一个 OS/终端指纹段），默认 false。开启后共享账号不再全体共用同一 UA。
 	SettingKeyOpenAICodexAccountPersonaEnabled = "openai_codex_account_persona_enabled"
+	// SettingKeyOpenAICodexTicketEnabled Codex 292 打票总开关（后台可改、热更新）。
+	// 关闭：不打票、不注入 x-codex-turn-state，按原链路转发。
+	// 开启：后台打票并在业务请求中覆盖该头。
+	SettingKeyOpenAICodexTicketEnabled = "openai_codex_ticket_enabled"
+	// SettingKeyOpenAICodexTicketHarvestProxyURL Codex 292 打票出口（socks5h/http），后台可改、热更新。
+	SettingKeyOpenAICodexTicketHarvestProxyURL = "openai_codex_ticket_harvest_proxy_url"
 	// SettingKeyOpenAIAllowClaudeCodeCodexPlugin 已废弃：历史全局开关只作为升级迁移输入读取。
 	// 迁移后等价规则写入 SettingKeyCodexCLIOnlyWhitelist，不再参与运行时判定。
 	SettingKeyOpenAIAllowClaudeCodeCodexPlugin = "openai_allow_claude_code_codex_plugin"

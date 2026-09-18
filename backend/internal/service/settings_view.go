@@ -254,6 +254,8 @@ type SystemSettings struct {
 	OpenAICodexOriginator                  string // 出站声明的 Codex originator（默认 codex-tui）
 	OpenAICodexTimezone                    string // 出站请求体 environment_context 的时区（IANA 名，空=不改写）
 	OpenAICodexAccountPersonaEnabled       bool   // 是否为每个 OAuth 凭据分配稳定 UA persona（默认 false）
+	OpenAICodexTicketEnabled               bool   // Codex 292 打票总开关；关闭则不打票不注入
+	OpenAICodexTicketHarvestProxyURL       string // Codex 292 打票代理 URL；空则回退 yaml/env
 	MinCodexVersion                        string // codex_cli_only 最低 Codex 引擎版本；空=不检查
 	MaxCodexVersion                        string // codex_cli_only 最高 Codex 引擎版本；空=不检查
 	CodexCLIOnlyBlacklist                  string // codex_cli_only 全局黑名单 JSON（[]AllowedClientEntry，OR deny）
